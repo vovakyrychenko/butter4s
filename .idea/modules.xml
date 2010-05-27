@@ -2,8 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/bind/bind.iml" filepath="$PROJECT_DIR$/bind/bind.iml" />
       <module fileurl="file://$PROJECT_DIR$/butter4s.iml" filepath="$PROJECT_DIR$/butter4s.iml" />
       <module fileurl="file://$PROJECT_DIR$/lang/lang.iml" filepath="$PROJECT_DIR$/lang/lang.iml" />
+      <module fileurl="file://$PROJECT_DIR$/reflect/reflect.iml" filepath="$PROJECT_DIR$/reflect/reflect.iml" />
     </modules>
   </component>
 </project>

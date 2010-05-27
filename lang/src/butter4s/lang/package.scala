@@ -23,14 +23,21 @@
  */
 package butter4s
 
+import lang.Predicate.cast
+import lang.Predicate.P
+
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
 package object lang {
-	implicit def identity[A]( a: A ) = a
+	//	implicit def identity[A]( a: A ) = a
+	//
+	//	implicit def bytes2String( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
+	//
+	//	implicit def string2bytes( s: String ) = s.getBytes( "UTF-8" )
 
-	implicit def bytes2String( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
+	implicit def function2predicate[A]( f: A => Boolean ): P[A] = cast( f )
 
-	implicit def string2bytes( s: String ) = s.getBytes( "UTF-8" )
+	def not[A]( f: A => Boolean ) = f.not
 }

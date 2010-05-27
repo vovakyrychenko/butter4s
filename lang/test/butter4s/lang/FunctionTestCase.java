@@ -23,6 +23,7 @@
  */
 package butter4s.lang;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -36,5 +37,7 @@ public class FunctionTestCase {
 				return s;
 			}
 		};
+		String r = f.apply( "aaa" );
+		Assert.assertEquals( "aaa", r );
 	}
 }

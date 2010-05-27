@@ -27,8 +27,7 @@ package butter4s.lang
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 object Function {
-	trait IF[@specialized( scala.Int, scala.Long, scala.Float, scala.Double ) -A,
-	@specialized( scala.Unit, scala.Boolean, scala.Int, scala.Float, scala.Long, scala.Double ) +B] extends Function1[A, B]
-	abstract class F[@specialized( scala.Int, scala.Long, scala.Float, scala.Double )
-	-A, @specialized( scala.Unit, scala.Boolean, scala.Int, scala.Float, scala.Long, scala.Double ) +B] extends IF[A, B]
+	abstract class F[-A, +B] extends Function1[A, B]
+	abstract class F2[-A, -B, +C] extends Function2[A, B, C]
+	abstract class F0[+A] extends Function0[A]
 }
