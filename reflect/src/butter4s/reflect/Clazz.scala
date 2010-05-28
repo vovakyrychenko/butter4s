@@ -61,12 +61,7 @@ class Method( val impl: JMethod ) extends AnnotationTarget {
 trait AnnotationTarget {
 	val impl: AnnotatedElement
 
-	def annotatedWith[A <: java.lang.annotation.Annotation]( implicit m: Manifest[A] ) = {
-		println(m.erasure)
-		val present = impl.isAnnotationPresent( m.erasure.asInstanceOf[Class[A]] )
-		println(present)
-		present
-	}
+	def annotatedWith[A <: java.lang.annotation.Annotation]( implicit m: Manifest[A] ) = impl.isAnnotationPresent( m.erasure.asInstanceOf[Class[A]] )
 
 	def annotation[A <: java.lang.annotation.Annotation]( implicit m: Manifest[A] ) = Option( impl.getAnnotation( m.erasure.asInstanceOf[Class[A]] ) )
 }
