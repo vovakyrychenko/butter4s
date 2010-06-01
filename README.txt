@@ -1,4 +1,7 @@
 Scala Libraries and JAva Interoperable Libraries
-- reflection
+- reflect
 - lang (java interoperable lambda-functions and predicates)
 - bind (JSON Binding)
+- servlet (servlet api wrappers, simple rest library)
+- persistence (JSON based persistence)
+- io
