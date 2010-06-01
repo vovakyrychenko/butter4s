@@ -21,23 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package butter4s
+package butter4s.servlet
 
-import lang.Predicate.cast
-import lang.Predicate.P
+import javax.servlet.ServletContext
+import javax.servlet.http.{HttpServletResponse, HttpServletRequest, HttpServlet}
+import butter4s.servlet._
 
 /**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+ * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
+trait Servlet extends HttpServlet {
+	override def init( config: javax.servlet.ServletConfig ) = {
+		super.init( config )
+		initialize( config )
+	}
 
-package object lang {
-	//	implicit def identity[A]( a: A ) = a
-	//
-	implicit def bytes2String( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
+	def initialize( config: ServletConfig ) = {}
 
-	implicit def string2bytes( s: String ) = s.getBytes( "UTF-8" )
+	override def doGet( request: HttpServletRequest, response: HttpServletResponse ) = get( request, response )
 
-	implicit def function2predicate[A]( f: A => Boolean ): P[A] = cast( f )
+	def get( request: Request, response: Response ) = {}
 
-	def not[A]( f: A => Boolean ) = f.not
+	override def doPost( request: HttpServletRequest, response: HttpServletResponse ) = post( request, response )
+
+	def post( request: Request, response: Response ) = {}
+}
+
+class ServletConfig( val impl: javax.servlet.ServletConfig ) extends Parameterizeable {
+	lazy val context = new Context( impl.getServletContext )
+}
+
+class Context( impl: ServletContext ) {
+	def realPath( path: String ) = impl.getRealPath( path )
 }

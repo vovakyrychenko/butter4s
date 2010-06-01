@@ -21,23 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package butter4s
+package butter4s.servlet
 
-import lang.Predicate.cast
-import lang.Predicate.P
+import javax.servlet.{FilterChain, ServletResponse, ServletRequest}
+import butter4s.servlet._
 
 /**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+ * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
+trait Filter extends javax.servlet.Filter {
+	def destroy = {}
 
-package object lang {
-	//	implicit def identity[A]( a: A ) = a
-	//
-	implicit def bytes2String( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
+	def doFilter( request: ServletRequest, response: ServletResponse, chain: FilterChain ) = filter( request, response, chain )
 
-	implicit def string2bytes( s: String ) = s.getBytes( "UTF-8" )
+	def filter( request: Request, response: Response, chain: Chain ): Unit
 
-	implicit def function2predicate[A]( f: A => Boolean ): P[A] = cast( f )
+	def init( config: javax.servlet.FilterConfig ) = initialize( config )
 
-	def not[A]( f: A => Boolean ) = f.not
+	def initialize( config: FilterConfig ) = {}
 }
+
+class FilterConfig( val impl: javax.servlet.FilterConfig ) extends Parameterizeable

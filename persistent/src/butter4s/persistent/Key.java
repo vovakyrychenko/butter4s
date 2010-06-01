@@ -21,23 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package butter4s
+package butter4s.persistent;
 
-import lang.Predicate.cast
-import lang.Predicate.P
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
-
-package object lang {
-	//	implicit def identity[A]( a: A ) = a
-	//
-	implicit def bytes2String( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
-
-	implicit def string2bytes( s: String ) = s.getBytes( "UTF-8" )
-
-	implicit def function2predicate[A]( f: A => Boolean ): P[A] = cast( f )
-
-	def not[A]( f: A => Boolean ) = f.not
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Key {
 }

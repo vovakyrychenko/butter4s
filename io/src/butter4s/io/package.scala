@@ -23,21 +23,28 @@
  */
 package butter4s
 
-import lang.Predicate.cast
-import lang.Predicate.P
+import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
 
 /**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+ * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
+package object io {
+	val EOS = -1;
 
-package object lang {
-	//	implicit def identity[A]( a: A ) = a
-	//
-	implicit def bytes2String( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
+	def using[A <: {def close()}, B]( c: A )( body: A => B ) = try body( c ) finally c.close
 
-	implicit def string2bytes( s: String ) = s.getBytes( "UTF-8" )
+	def copy[P]( source: P, out: OutputStream )( implicit fromSource: P => Array[Byte] ) = out.write( source )
 
-	implicit def function2predicate[A]( f: A => Boolean ): P[A] = cast( f )
+	def copy( in: InputStream, out: OutputStream ) = {
+		val buffer = new Array[Byte]( 2048 );
+		var count = 0
+		while ( {count = in.read( buffer ); count != EOS} ) out.write( buffer, 0, count );
+		out.flush();
+	}
 
-	def not[A]( f: A => Boolean ) = f.not
+	def readAs[R]( in: InputStream )( implicit toResult: Array[Byte] => R ): R = {
+		val bytes = new ByteArrayOutputStream()
+		copy( in, bytes )
+		bytes.toByteArray
+	}
 }

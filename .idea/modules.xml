@@ -4,8 +4,11 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/bind/bind.iml" filepath="$PROJECT_DIR$/bind/bind.iml" />
       <module fileurl="file://$PROJECT_DIR$/butter4s.iml" filepath="$PROJECT_DIR$/butter4s.iml" />
+      <module fileurl="file://$PROJECT_DIR$/io/io.iml" filepath="$PROJECT_DIR$/io/io.iml" />
       <module fileurl="file://$PROJECT_DIR$/lang/lang.iml" filepath="$PROJECT_DIR$/lang/lang.iml" />
+      <module fileurl="file://$PROJECT_DIR$/persistent/persistent.iml" filepath="$PROJECT_DIR$/persistent/persistent.iml" />
       <module fileurl="file://$PROJECT_DIR$/reflect/reflect.iml" filepath="$PROJECT_DIR$/reflect/reflect.iml" />
+      <module fileurl="file://$PROJECT_DIR$/servlet/servlet.iml" filepath="$PROJECT_DIR$/servlet/servlet.iml" />
     </modules>
   </component>
 </project>

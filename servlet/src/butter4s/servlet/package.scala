@@ -23,21 +23,31 @@
  */
 package butter4s
 
-import lang.Predicate.cast
-import lang.Predicate.P
+import javax.servlet.http.{HttpSession, HttpServletResponse, HttpServletRequest}
+import javax.servlet.{ServletResponse, ServletRequest, FilterChain}
+import butter4s.servlet._
 
 /**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+ * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
+package object servlet {
+	implicit def convertHttpRequest( request: HttpServletRequest ) = new Request( request )
 
-package object lang {
-	//	implicit def identity[A]( a: A ) = a
-	//
-	implicit def bytes2String( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
+	implicit def convertHttpResponse( response: HttpServletResponse ) = new Response( response )
 
-	implicit def string2bytes( s: String ) = s.getBytes( "UTF-8" )
+	implicit def convertRequest( request: ServletRequest ) = new Request( request.asInstanceOf[HttpServletRequest] )
 
-	implicit def function2predicate[A]( f: A => Boolean ): P[A] = cast( f )
+	implicit def unconvertRequest( request: Request ) = request.impl
 
-	def not[A]( f: A => Boolean ) = f.not
+	implicit def convertResponse( response: ServletResponse ) = new Response( response.asInstanceOf[HttpServletResponse] )
+
+	implicit def unconvertResponse( response: Response ) = response.impl
+
+	implicit def convertChain( chain: FilterChain ) = new Chain( chain )
+
+	implicit def convertServletConfig( config: javax.servlet.ServletConfig ) = new ServletConfig( config )
+
+	implicit def convertFilterConfig( config: javax.servlet.FilterConfig ) = new FilterConfig( config )
+
+	implicit def unconvertSession( session: Session ): HttpSession = session.impl
 }
