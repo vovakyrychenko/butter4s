@@ -47,7 +47,7 @@ package object reflect {
 
 	def typeOf(value: Any): Class[_] = value match {
 		case v: AnyRef => v.getClass
-		case c: Int => classOf[Int]
+		case _: Int => classOf[Int]
 		case _: Long => classOf[Long]
 		case _: Byte => classOf[Byte]
 		case _: Short => classOf[Short]
