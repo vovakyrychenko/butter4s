@@ -40,6 +40,10 @@ class JSONBindTestCase {
 	@Test def bindDeepGeneric = assertBind( BeanGB2( BeanGeneric( List( BeanGeneric( List( 1, 2 ) ), BeanGeneric( List( 3, 4 ) ) ) ),
 		BeanGeneric( List( BeanGeneric( List( 5, 6 ) ), BeanGeneric( List( 7, 8 ) ) ) ) ) )
 
+	@Test def bindQuote = assertBind( Bean( "\\\n\r\t\"'x", 10, null ) )
+
+	@Test def bindNulls = assertBind( Bean( null, 10, null ) )
+
 	def assertBind[A <: AnyRef : Manifest]( source: A ) = {
 		val json = JSONBind.marshal( source )
 		println( json )

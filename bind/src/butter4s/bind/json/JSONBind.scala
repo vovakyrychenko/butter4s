@@ -63,7 +63,7 @@ object JSONBind {
 		case Some( map ) => unmarshal[A]( implicitly[Manifest[A]].erasure.asInstanceOf[Class[A]], map.asInstanceOf[Map[String, Any]] )
 	}
 
-	private def unmarshal[A <: AnyRef]( t: Type, map: Map[String, Any] ): A = {
+	def unmarshal[A <: AnyRef]( t: Type, map: Map[String, Any] ): A = {
 		val clazz = t.toClass[A]
 		val a = clazz.newInstance
 		for ( (name, value) <- map ) clazz.declaredField( name ) match {
@@ -73,18 +73,25 @@ object JSONBind {
 		a
 	}
 
-	private def unmarshalValue( t: Type, value: Any ): Any = t match {
-		case clazz: Class[_] => marshallers.find( t => clazz.isAssignableFrom( t._1 ) ) match {
-			case Some( (_, m) ) => m.unmarshal( value, clazz )
-			case None if value.isInstanceOf[Map[_, _]] => unmarshal[AnyRef]( clazz, value.asInstanceOf[Map[String, Any]] )
-			case _ => throw new UnmarshalException( "could not unmarshal " + value + " as " + clazz )
+	def unmarshalValue( t: Type, value: Any ): Any = {
+		def _unmarshal( t: Type, filter: Class[_] => Boolean ) = marshallers.find( t => filter( t._1 ) ) match {
+			case Some( (_, m) ) => m.unmarshal( value, t )
+			case None if value.isInstanceOf[Map[_, _]] => unmarshal[AnyRef]( t, value.asInstanceOf[Map[String, Any]] )
+			case _ => throw new UnmarshalException( "could not unmarshal " + value + " as " + t )
 		}
-		case pt: ParameterizedType => marshallers.find( t => pt.getRawType.asInstanceOf[Class[_]].isAssignableFrom( t._1 ) ) match {
-			case Some( (_, m) ) => m.unmarshal( value, pt )
-			case None if value.isInstanceOf[Map[_, _]] => unmarshal[AnyRef]( pt, value.asInstanceOf[Map[String, Any]] )
-			case _ => throw new UnmarshalException( "could not unmarshal " + value + " as " + pt )
+
+		if ( value == null ) null else t match {
+			case clazz: Class[_] => _unmarshal( clazz, t => clazz.isAssignableFrom( t ) )
+			case pt: ParameterizedType => _unmarshal( pt, t => pt.getRawType.asInstanceOf[Class[_]].isAssignableFrom( t ) )
 		}
 	}
+
+	val dangerous = Map( '\\' -> "\\\\", '"' -> "\\\"", '\n' -> "\\n", '\r' -> "\\r", '\t' -> "\\t" )
+
+	def quote( value: String ): String = value.foldLeft( "" )( (seed, c) => dangerous.get( c ) match {
+		case Some( r ) => seed + r
+		case None => seed + c
+	} )
 
 	private var marshallers: Map[Class[_], Marshaller] = Map(
 		classOf[Int] -> new NumericMarshaller( _.toInt ),
@@ -101,7 +108,7 @@ object JSONBind {
 		classOf[java.lang.Double] -> new NumericMarshaller( d => d ),
 		classOf[Boolean] -> new ParametricMarshaller( unmarshaller = b => b ),
 		classOf[java.lang.Boolean] -> new ParametricMarshaller( unmarshaller = b => b ),
-		classOf[String] -> new ParametricMarshaller( s => "\"" + s + "\"", s => s ),
+		classOf[String] -> new ParametricMarshaller( s => "\"" + quote( s.toString ) + "\"", s => s ),
 		classOf[List[_]] -> ListMarshaller
 		)
 
