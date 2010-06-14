@@ -1,4 +1,3 @@
-Scala Libraries and Java Interoperable Libraries
 - reflect
 - lang (java interoperable lambda-functions and predicates)
 - bind (JSON Binding)

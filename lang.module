@@ -22,7 +22,10 @@
 #  THE SOFTWARE.
 #
 
-#Sun Apr 04 20:44:23 EEST 2010
-version=1.0.0
-version.build=2
-version.suffix=a
+package.name = butter4s-lang
+manifest.title = butter4s-lang
+manifest.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+libraries =
+sources = lang/src
+use.scala = true
+module.scala.home = ${scala.2.8.home}
