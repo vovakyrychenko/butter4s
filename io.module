@@ -22,17 +22,11 @@
 #  THE SOFTWARE.
 #
 
-vcs.tag.prefix = b4s
-vcs.git = true
-vcs.git.remote = origin
-vcs.git.branch = master
-#build.resources
-build.libraries = lib/*.jar, servlet/lib/*.jar
-build.sources = lang/src:lang/test:io/src:reflect/src:bind/src:bind/test:servlet/src:persistent/src
-build.use.scala = yes
-build.use.java = yes
-modules = lang,reflect,io,servlet,bind,persistent
-releases =
-javadocs =
-war-releases =
- 
+package.name = butter4s-io
+manifest.title = butter4s-io
+manifest.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+libraries = dist/*.jar
+sources = io/src
+use.scala = true
+#use.java = true
+#module.scala.home = ${scala.2.8.home}
