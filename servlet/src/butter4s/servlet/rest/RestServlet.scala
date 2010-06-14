@@ -1,7 +1,6 @@
 package butter4s.servlet.rest
 
 import javax.servlet.http.HttpServletResponse
-import butter4s.servlet.{Response, Request, Servlet}
 import butter4s.servlet._
 import butter4s.reflect._
 
