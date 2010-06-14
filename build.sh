@@ -1,1 +1,1 @@
-ant -f .build/build.xml
+ant -f .build/build.xml $@

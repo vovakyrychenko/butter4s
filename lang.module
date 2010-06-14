@@ -25,7 +25,8 @@
 package.name = butter4s-lang
 manifest.title = butter4s-lang
 manifest.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
-libraries =
+libraries = lang/lib/*.jar
 sources = lang/src
 use.scala = true
-module.scala.home = ${scala.2.8.home}
+#use.java = true
+#module.scala.home = ${scala.2.8.home}

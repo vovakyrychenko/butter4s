@@ -1,0 +1,215 @@
+<!--
+  ~ Copyright 2010 Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+  ~
+  ~  Licensed under the Apache License, Version 2.0 (the "License");
+  ~  you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~  Unless required by applicable law or agreed to in writing, software
+  ~  distributed under the License is distributed on an "AS IS" BASIS,
+  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
+  -->
+
+<project name="Module" default="build" basedir="../">
+	<property file="local.properties"/>
+	<property file="${build.properties}"/>
+	
+	<path id="project.class.path">
+		<fileset dir="${project.home}/.build/lib" includes="*.jar"/>
+		<fileset dir="${project.home}" includes="${libraries}"/>
+		<fileset dir="${project.home}/build/${package.name}"/>
+	</path>
+
+	<target name="clean">
+		<delete failonerror="false">
+			<fileset dir="${project.home}/build/${package.name}"/>
+		</delete>
+		<mkdir dir="${project.home}/dist"/>
+		<mkdir dir="${project.home}/build/${package.name}"/>
+	</target>
+
+	<target name="copy-resources" if="resources">
+		<copy todir="${project.home}/build/${package.name}" verbose="true">
+			<fileset dir="${project.home}" includes="${resources}"/>
+			<mapper type="regexp" from="^([^\\]*)\\([^\\]*)\\(.*)$$" to="\3"/>
+		</copy>
+		<copy todir="${project.home}/build/${package.name}" verbose="true">
+			<fileset dir="${project.home}" includes="${resources}"/>
+			<mapper type="regexp" from="^([^/]*)/([^/]*)/(.*)$$" to="\3"/>
+		</copy>
+	</target>
+
+	<target name="copy-meta-resources" if="meta.resources">
+		<mkdir dir="${project.home}/build/${package.name}/META-INF"/>
+		<copy todir="${project.home}/build/${package.name}/META-INF" verbose="true" flatten="true">
+			<fileset dir="${project.home}" includes="${meta.resources}"/>
+		</copy>
+	</target>
+
+	<target name="antlr-generate">
+		<antlr target="${project.home}/${grammar}">
+			<classpath refid="project.class.path"/>
+		</antlr>
+	</target>
+
+	<target name="compile-antlr" if="antlr.grammars">
+		<foreach list="${antlr.grammars}" param="grammar" target="antlr-generate"/>
+	</target>
+
+	<target name="javacc-generate">
+		<javacc target="${project.home}/${grammar}" javacchome="${project.home}/lib" />
+	</target>
+
+	<target name="compile-javacc" if="javacc.grammars">
+		<foreach list="${javacc.grammars}" param="grammar" target="javacc-generate"/>
+	</target>
+
+	<target name="wscompile-compile">
+		<basename property="module.dir" file="${build.properties}" suffix=".module"/>
+		<wscompile client="true" verbose="true" config="${config}"
+							 sourceBase="${project.home}/${module.dir}/src"
+							 base="${project.home}/build/${package.name}">
+			<classpath refid="project.class.path"/>
+		</wscompile>
+	</target>
+
+	<target name="wscompile" if="wscompile.configs">
+		<taskdef name="wscompile" classpathref="project.class.path" classname="com.sun.xml.rpc.tools.ant.Wscompile"/>
+		<foreach list="${wscompile.configs}" param="config" target="wscompile-compile"/>
+	</target>
+
+	<target name="wsimport-compile">
+		<basename property="module.dir" file="${build.properties}" suffix=".module"/>
+		<property file="${project.home}/${service}.client" prefix="wsimport"/>
+		<wsimport destdir="${project.home}/build/${package.name}"
+							sourcedestdir="${project.home}/${module.dir}/src"
+							package="${wsimport.service.package}"
+							wsdl="${wsimport.service.wsdl}"
+							keep="true" verbose="true">
+		</wsimport>
+	</target>
+
+	<target name="wsimport" if="wsimport.services">
+		<taskdef name="wsimport" classpathref="project.class.path" classname="com.sun.tools.ws.ant.WsImport2"/>
+		<foreach list="${wsimport.services}" param="service" target="wsimport-compile"/>
+	</target>
+
+	<target name="wsgen-compile">
+		<taskdef name="wsgen" classpathref="project.class.path" classname="com.sun.tools.ws.ant.WsGen2" />
+		<property file="${project.home}/${service}.service" prefix="wsgen"/>
+		<dirname property="resource.dir" file="${project.home}/${service}.service"/>
+		<wsgen verbose="true" sei="${wsgen.service.sei}" genwsdl="true" resourcedestdir="${resource.dir}">
+			<classpath refid="project.class.path"/>
+		</wsgen>
+	</target>
+
+	<target name="wsgen" if="wsgen.services">
+		<foreach list="${wsgen.services}" param="service" target="wsgen-compile"/>
+	</target>
+
+	<target name="xjc-generate">
+		<taskdef name="xjc" classpathref="project.class.path" classname="com.sun.tools.xjc.XJC2Task" />
+		<dirname property="destination" file="${project.home}/${schema}.xsd"/>
+		<xjc schema="${project.home}/${schema}.xsd" binding="${project.home}/${schema}.xjb" destdir="${destination}">
+			<classpath refid="project.class.path"/>
+		</xjc>
+	</target>
+
+	<target name="xjc" if="xjc.schemas">
+		<foreach list="${xjc.schemas}" param="schema" target="xjc-generate"/>
+	</target>
+
+	<target name="pre-compile" depends="clean, compile-antlr, compile-javacc, xjc, wsgen, wscompile, wsimport"/>
+	
+	<target name="resolve-local-scala" if="module.scala.home">
+		<property name="_scala.home" value="${module.scala.home}"/>
+	</target>
+
+	<target name="resolve-global-scala" unless="module.scala.home">
+		<property name="_scala.home" value="${scala.home}"/>
+	</target>
+
+	<target name="compile-scala" if="use.scala" depends="resolve-local-scala,resolve-global-scala">
+		<echo level="info" message="Building ${sources} with scala ${_scala.home}"/>
+		<path id="scala.class.path">
+			<path refid="project.class.path"/>
+			<fileset dir="${_scala.home}/lib" includes="*.jar"/>
+		</path>
+		<taskdef resource="scala/tools/ant/antlib.xml" classpathref="scala.class.path"/>
+		<scalac destdir="${project.home}/build/${package.name}" encoding="UTF-8" force="always"
+		        classpathref="scala.class.path" srcdir="${sources}"/>
+	</target>
+
+	<target name="resolve-local-jdk" if="module.jdk.home">
+		<property name="_jdk.home" value="${module.jdk.home}"/>
+	</target>
+
+	<target name="resolve-global-jdk" unless="module.jdk.home">
+		<property name="_jdk.home" value="${jdk.home}"/>
+	</target>
+
+	<target name="compile-java" depends="resolve-local-jdk, resolve-global-jdk" if="use.java">
+		<echo level="info" message="Building with jdk ${_jdk.home}"/>
+		<javac executable="${_jdk.home}/bin/javac" classpathref="project.class.path"
+					 srcdir="${project.home}/${sources}" destdir="${project.home}/build/${package.name}"
+					 debug="true" fork="true" encoding="UTF-8" target="1.5">
+			<compilerarg line="-Xlint:unchecked -Xlint:deprecation"/>
+		</javac>
+
+	</target>
+
+	<target name="include-packages" if="package.include">
+		<unjar dest="${project.home}/build/${package.name}">
+			<fileset dir="${project.home}" includes="${package.include}"/>
+		</unjar>
+	</target>
+
+	<target name="sign" if="sign.keystore">
+		<signjar jar="${project.home}/dist/${jar}" storetype="pkcs12"
+						 keystore="${project.home}/${sign.keystore}" alias="${sign.cert.alias}"
+						 storepass="${sign.storepass}"/>
+	</target>
+
+	<target name="pack">
+		<jar basedir="${project.home}/build/${package.name}"
+				 file="${project.home}/dist/${package.name}.jar">
+			<manifest>
+				<attribute name="Implementation-Title" value="${manifest.title}"/>
+				<attribute name="Implementation-Version" value="${version.long}"/>
+				<attribute name="Implementation-Vendor" value="${manifest.vendor}"/>
+				<attribute name="Main-Class" value="${manifest.main.class}"/>
+			</manifest>
+		</jar>
+		<antcall target="sign">
+			<param name="jar" value="${package.name}.jar"/>
+		</antcall>
+	</target>
+
+	<target name="jni" if="jni.class">
+		<mkdir dir="${project.home}/build/jni/${package.name}"/>
+		<javah force="true" destdir="${project.home}/build/jni/${package.name}" class="${jni.class}">
+			<classpath refid="project.class.path"/>
+			<classpath path="${project.home}/build/${package.name}"/>
+		</javah>
+
+		<zip basedir="${project.home}/build/jni/${package.name}"
+				 file="${project.home}/dist/${package.name}-jni.zip"/>
+	</target>
+
+	<target name="build">
+		<echo message="Building ${manifest.title}"/>
+		<antcall target="clean"/>
+		<antcall target="pre-compile"/>
+		<antcall target="compile-scala"/>
+		<antcall target="compile-java"/>
+		<antcall target="copy-resources"/>
+		<antcall target="copy-meta-resources"/>
+		<antcall target="jni"/>
+		<antcall target="include-packages"/>
+		<antcall target="pack"/>
+	</target>
+</project>
