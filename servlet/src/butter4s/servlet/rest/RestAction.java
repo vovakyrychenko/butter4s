@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
 public @interface RestAction {
 	String charset() default "UTF-8";
 
-	String produces() default RestConstants.DEFAULT;
+	String produces() default "text/plain";
 
 	String path() default RestConstants.DEFAULT;
 }
