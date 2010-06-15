@@ -28,5 +28,5 @@ manifest.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
 libraries = dist/*.jar, servlet/lib/*.jar
 sources = servlet/src
 use.scala = true
-#use.java = true
+use.java = true
 #module.scala.home = ${scala.2.8.home}

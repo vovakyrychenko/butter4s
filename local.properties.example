@@ -23,6 +23,7 @@
 #
 
 project.home = .
+jdk.home = /usr/lib64/jvm/java-1.6.0-sun
 scala.home = /home/development/scala2.8
 scala.2.8.home = /home/development/scala2.8
 #developer = yes

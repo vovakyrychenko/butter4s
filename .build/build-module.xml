@@ -140,7 +140,7 @@
 			<fileset dir="${_scala.home}/lib" includes="*.jar"/>
 		</path>
 		<taskdef resource="scala/tools/ant/antlib.xml" classpathref="scala.class.path"/>
-		<scalac destdir="${project.home}/build/${package.name}" encoding="UTF-8" force="always"
+		<scalac destdir="${project.home}/build/${package.name}" encoding="UTF-8" force="always" fork="true"
 		        classpathref="scala.class.path" srcdir="${sources}"/>
 	</target>
 
