@@ -27,4 +27,13 @@ import java.lang.annotation.Target;
 @Target( ElementType.METHOD )
 @Retention( RetentionPolicy.RUNTIME )
 public @interface RestAction {
+	String charset() default "UTF-8";
+
+	String produces() default RestConstants.DEFAULT;
+
+	String path() default RestConstants.DEFAULT;
+}
+
+interface RestConstants {
+	String DEFAULT = "DEFAULT";
 }

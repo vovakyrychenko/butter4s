@@ -14,8 +14,12 @@ class RestServlet extends Servlet {
 		val action = request.getRequestURI.substring( request.getServletPath.length + 1 )
 		val methodName = if ( action.contains( "/" ) ) action.substring( 0, action.indexOf( "/" ) ) else action
 		getClass.declaredMethod( methodName ) match {
-			case Some( method ) if ( method.annotatedWith[RestAction] ) => method.invoke( this, Array[AnyRef]( request, response ): _* )
-			case Some( method ) => response.sendError( HttpServletResponse.SC_NOT_FOUND, methodName + " is not a @RestAction" )
+			case Some( method ) => method.annotation[RestAction] match {
+				case Some( a ) =>
+					if ( a.produces != RestConstants.DEFAULT ) response.setContentType( a.produces + "; charset=" + a.charset )
+					method.invoke( this, Array[AnyRef]( new RestRequest( request, if ( a.path != RestConstants.DEFAULT ) a.path else method.name ), response ): _* )
+				case None => response.sendError( HttpServletResponse.SC_NOT_FOUND, methodName + " is not a @RestAction" )
+			}
 			case None => response.sendError( HttpServletResponse.SC_NOT_FOUND, methodName + " not found" )
 		}
 	}
