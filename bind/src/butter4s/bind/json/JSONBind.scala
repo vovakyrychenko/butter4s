@@ -60,7 +60,7 @@ object JSONBind {
 
 	def unmarshal[A <: AnyRef : Manifest]( input: String ): A = JSON.parse( input ) match {
 		case None => throw new UnmarshalException( "could not parse", input )
-		case Some( map ) => unmarshal[A]( implicitly[Manifest[A]].erasure.asInstanceOf[Class[A]], map.asInstanceOf[Map[String, Any]] )
+		case Some( map ) => unmarshal[A]( manifest[A].erasure.asInstanceOf[Class[A]], map.asInstanceOf[Map[String, Any]] )
 	}
 
 	def unmarshal[A <: AnyRef]( t: Type, map: Map[String, Any] ): A = {

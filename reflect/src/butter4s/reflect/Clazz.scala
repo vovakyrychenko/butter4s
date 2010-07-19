@@ -69,7 +69,7 @@ class Clazz[A]( val impl: Class[_] ) extends AnnotationTarget {
 
 	def annotatedField[A <: java.lang.annotation.Annotation : Manifest] = declaredFields.find( _.annotatedWith[A] )
 
-	def assignableFrom[C: Manifest] = impl.isAssignableFrom( implicitly[Manifest[C]].erasure )
+	def assignableFrom[C: Manifest] = impl.isAssignableFrom( manifest[C].erasure )
 
 	override def toString = impl.toString + " as Clazz"
 }
@@ -89,8 +89,8 @@ class Method( val impl: JMethod ) extends AnnotationTarget {
 trait AnnotationTarget {
 	val impl: AnnotatedElement
 
-	def annotatedWith[A <: java.lang.annotation.Annotation : Manifest] = impl.isAnnotationPresent( implicitly[Manifest[A]].erasure.asInstanceOf[Class[A]] )
+	def annotatedWith[A <: java.lang.annotation.Annotation : Manifest] = impl.isAnnotationPresent( manifest[A].erasure.asInstanceOf[Class[A]] )
 
-	def annotation[A <: java.lang.annotation.Annotation : Manifest] = Option( impl.getAnnotation( implicitly[Manifest[A]].erasure.asInstanceOf[Class[A]] ) )
+	def annotation[A <: java.lang.annotation.Annotation : Manifest] = Option( impl.getAnnotation( manifest[A].erasure.asInstanceOf[Class[A]] ) )
 }
 
