@@ -22,11 +22,11 @@
 #  THE SOFTWARE.
 #
 
-package.name = butter4s-logging
-manifest.title = butter4s-logging
-manifest.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
-libraries = logging/lib/*.jar
-sources = logging/src
-use.scala = true
+module.name = butter4s-logging
+module.title = butter4s-logging
+module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+module.libraries = logging/lib/*.jar
+module.sources = logging/src
+module.use.scala = true
 #use.java = true
 #module.scala.home = ${scala.2.8.home}

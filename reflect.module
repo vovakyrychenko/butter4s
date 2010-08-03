@@ -22,11 +22,11 @@
 #  THE SOFTWARE.
 #
 
-package.name = butter4s-reflect
-manifest.title = butter4s-reflect
-manifest.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
-libraries = dist/*.jar
-sources = reflect/src
-use.scala = true
+module.name = butter4s-reflect
+module.title = butter4s-reflect
+module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+module.libraries = dist/*.jar
+module.sources = reflect/src
+module.use.scala = true
 #use.java = true
 #module.scala.home = ${scala.2.8.home}

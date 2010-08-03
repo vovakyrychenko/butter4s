@@ -22,11 +22,11 @@
 #  THE SOFTWARE.
 #
 
-package.name = butter4s-persistent
-manifest.title = butter4s-persistent
-manifest.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
-libraries = dist/*.jar
-sources = persistent/src
-use.scala = true
-use.java = true
+module.name = butter4s-persistent
+module.title = butter4s-persistent
+module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+module.libraries = dist/*.jar
+module.sources = persistent/src
+module.use.scala = true
+module.use.java = true
 #module.scala.home = ${scala.2.8.home}

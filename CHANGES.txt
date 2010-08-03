@@ -1,3 +1,4 @@
+- logging
 - reflect
 - lang (java interoperable lambda-functions and predicates)
 - bind (JSON Binding)

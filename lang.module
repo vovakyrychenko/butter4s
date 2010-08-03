@@ -22,11 +22,11 @@
 #  THE SOFTWARE.
 #
 
-package.name = butter4s-lang
-manifest.title = butter4s-lang
-manifest.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
-libraries = lang/lib/*.jar
-sources = lang/src
-use.scala = true
+module.name = butter4s-lang
+module.title = butter4s-lang
+module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+module.libraries = lang/lib/*.jar
+module.sources = lang/src
+module.use.scala = true
 #use.java = true
 #module.scala.home = ${scala.2.8.home}
