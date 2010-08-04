@@ -119,7 +119,7 @@
 
 	<target name="compile-scala" depends="antlr" if="build.use.scala">
 		<taskdef resource="scala/tools/ant/antlib.xml" classpathref="project.class.path"/>
-		<scalac destdir="${project.home}/build/common/classes" encoding="UTF-8" force="always"
+		<scalac destdir="${project.home}/build/common/classes" encoding="UTF-8" force="always" fork="true"
 		        classpathref="project.class.path" srcdir="${build.sources}"/>
 
 		<antcall target="copy-resources"/>
