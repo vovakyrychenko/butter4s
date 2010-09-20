@@ -34,6 +34,3 @@ public @interface RestAction {
 	String path() default RestConstants.DEFAULT;
 }
 
-interface RestConstants {
-	String DEFAULT = "DEFAULT";
-}

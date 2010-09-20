@@ -1,18 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
   <component name="FacetManager">
-    <facet type="Scala" name="Scala">
+    <facet type="scala" name="Scala">
       <configuration>
-        <option name="myScalaCompilerJarPaths">
-          <array>
-            <option value="$MODULE_DIR$/../../../.IntelliJIdea90/config/plugins/Scala/lib/scala-compiler.jar" />
-          </array>
-        </option>
-        <option name="myScalaSdkJarPaths">
-          <array>
-            <option value="$MODULE_DIR$/../../../.IntelliJIdea90/config/plugins/Scala/lib/scala-library.jar" />
-          </array>
-        </option>
+        <option name="compilerLibraryLevel" value="Global" />
+        <option name="compilerLibraryName" value="Scala2.8" />
       </configuration>
     </facet>
   </component>

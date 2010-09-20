@@ -4,6 +4,7 @@ import butter4s.servlet._
 import butter4s.reflect._
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import java.io.PrintWriter
+import annotation.target.param
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
@@ -23,7 +24,6 @@ class RestServlet extends Servlet {
 						): _* )
 				} catch {
 					case e: RestError => response.sendError( e.code, e.message )
-					case e => throw e
 				}
 				case None => response.sendError( HttpServletResponse.SC_NOT_FOUND, methodName + " is not a @RestAction" )
 			}
@@ -44,3 +44,23 @@ class RestResponse( impl: HttpServletResponse, contentType: String ) extends Res
 }
 
 class RestError( val code: Int, val message: String ) extends RuntimeException( code + " " + message )
+
+trait RestServlet2 extends Servlet {
+	override def post( request: Request, response: Response ) = get( request, response )
+
+	override def get( request: Request, response: Response ) = {
+		val action = request.getRequestURI.substring( request.getServletPath.length + 1 )
+		val methodName = if ( action.contains( "/" ) ) action.substring( 0, action.indexOf( "/" ) ) else action
+		getClass.declaredMethod( methodName ) match {
+			case None => response.sendError( HttpServletResponse.SC_NOT_FOUND, methodName + " not found" )
+			case Some( method ) => method.annotation[RestMethod] match {
+				case None => response.sendError( HttpServletResponse.SC_NOT_FOUND, methodName + " not exposed" )
+				case Some( a ) =>
+					method.invoke(this,method.parameters.map( p => Convert.to(request(p.annotation[RestParam].get.value).get, p.clazz) ))
+			}
+		}
+	}
+
+}
+
+

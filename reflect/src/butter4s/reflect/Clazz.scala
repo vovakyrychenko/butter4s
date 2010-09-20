@@ -25,6 +25,8 @@ package butter4s.reflect
 
 import java.lang.reflect.{Field => JField, Method => JMethod, AnnotatedElement, Type => JType, ParameterizedType, TypeVariable}
 import scala.annotation.tailrec
+import java.lang.annotation.Annotation
+import java.lang.Class
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
@@ -49,7 +51,7 @@ class Type( val impl: JType ) {
 }
 
 class Clazz[A]( val impl: Class[_] ) extends AnnotationTarget {
-	def declaredFields: List[Field] = {
+	lazy val declaredFields: List[Field] = {
 		@tailrec def find( fields: List[Field], clazz: Class[_] ): List[Field] =
 			if ( clazz == null ) fields else find( fields ::: clazz.getDeclaredFields.map( new Field( _ ) ).toList, clazz.getSuperclass )
 
@@ -58,7 +60,7 @@ class Clazz[A]( val impl: Class[_] ) extends AnnotationTarget {
 
 	def declaredField( name: String ) = declaredFields.find( _.name == name )
 
-	def declaredMethods: List[Method] = {
+	lazy val declaredMethods: List[Method] = {
 		@tailrec def find( methods: List[Method], clazz: Class[_] ): List[Method] =
 			if ( clazz == null ) methods else find( methods ::: clazz.getDeclaredMethods.map( new Method( _ ) ).toList, clazz.getSuperclass )
 
@@ -77,13 +79,30 @@ class Clazz[A]( val impl: Class[_] ) extends AnnotationTarget {
 class Field( val impl: JField ) extends AnnotationTarget {
 	impl.setAccessible( true )
 
-	def name = impl.getName
+	lazy val name = impl.getName
 }
 
 class Method( val impl: JMethod ) extends AnnotationTarget {
 	impl.setAccessible( true )
 
-	def name = impl.getName
+	lazy val name = impl.getName
+
+	lazy val parameters = impl.getParameterTypes.zip( impl.getParameterAnnotations ).map {case (c, a) => new Parameter( c, a )}
+}
+
+class Parameter( val clazz: Class[_], val annotations: Array[java.lang.annotation.Annotation] ) extends AnnotatedElement with AnnotationTarget {
+	override val impl = this
+
+	def getDeclaredAnnotations = annotations
+
+	def getAnnotations = annotations
+
+	def getAnnotation[T <: Annotation]( a: Class[T] ) = annotations.find( _ eq a ) match {
+		case None => null.asInstanceOf[T]
+		case Some( a ) => a.asInstanceOf[T]
+	}
+
+	def isAnnotationPresent( a: Class[_ <: Annotation] ) = annotations.exists( a eq _ )
 }
 
 trait AnnotationTarget {
