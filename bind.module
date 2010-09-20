@@ -22,11 +22,11 @@
 #  THE SOFTWARE.
 #
 
-package.name = butter4s-bind
-manifest.title = butter4s-bind
-manifest.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
-libraries = dist/*.jar
-sources = bind/src
-use.scala = true
-#use.java = true
+module.name = butter4s-bind
+module.title = butter4s-bind
+module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+module.libraries = dist/*.jar
+module.sources = bind/src
+module.use.scala = true
+#module.use.java = true
 #module.scala.home = ${scala.2.8.home}

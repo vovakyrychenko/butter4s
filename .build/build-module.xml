@@ -20,33 +20,33 @@
 	
 	<path id="project.class.path">
 		<fileset dir="${project.home}/.build/lib" includes="*.jar"/>
-		<fileset dir="${project.home}" includes="${libraries}"/>
-		<fileset dir="${project.home}/build/${package.name}"/>
+		<fileset dir="${project.home}" includes="${module.libraries}"/>
+		<fileset dir="${project.home}/build/${module.name}"/>
 	</path>
 
 	<target name="clean">
 		<delete failonerror="false">
-			<fileset dir="${project.home}/build/${package.name}"/>
+			<fileset dir="${project.home}/build/${module.name}"/>
 		</delete>
 		<mkdir dir="${project.home}/dist"/>
-		<mkdir dir="${project.home}/build/${package.name}"/>
+		<mkdir dir="${project.home}/build/${module.name}"/>
 	</target>
 
-	<target name="copy-resources" if="resources">
-		<copy todir="${project.home}/build/${package.name}" verbose="true">
-			<fileset dir="${project.home}" includes="${resources}"/>
+	<target name="copy-resources" if="module.resources">
+		<copy todir="${project.home}/build/${module.name}" verbose="true">
+			<fileset dir="${project.home}" includes="${module.resources}"/>
 			<mapper type="regexp" from="^([^\\]*)\\([^\\]*)\\(.*)$$" to="\3"/>
 		</copy>
-		<copy todir="${project.home}/build/${package.name}" verbose="true">
-			<fileset dir="${project.home}" includes="${resources}"/>
+		<copy todir="${project.home}/build/${module.name}" verbose="true">
+			<fileset dir="${project.home}" includes="${module.resources}"/>
 			<mapper type="regexp" from="^([^/]*)/([^/]*)/(.*)$$" to="\3"/>
 		</copy>
 	</target>
 
-	<target name="copy-meta-resources" if="meta.resources">
-		<mkdir dir="${project.home}/build/${package.name}/META-INF"/>
-		<copy todir="${project.home}/build/${package.name}/META-INF" verbose="true" flatten="true">
-			<fileset dir="${project.home}" includes="${meta.resources}"/>
+	<target name="copy-meta-resources" if="module.meta.resources">
+		<mkdir dir="${project.home}/build/${module.name}/META-INF"/>
+		<copy todir="${project.home}/build/${module.name}/META-INF" verbose="true" flatten="true">
+			<fileset dir="${project.home}" includes="${module.meta.resources}"/>
 		</copy>
 	</target>
 
@@ -56,36 +56,36 @@
 		</antlr>
 	</target>
 
-	<target name="compile-antlr" if="antlr.grammars">
-		<foreach list="${antlr.grammars}" param="grammar" target="antlr-generate"/>
+	<target name="compile-antlr" if="module.antlr.grammars">
+		<foreach list="${module.antlr.grammars}" param="grammar" target="antlr-generate"/>
 	</target>
 
 	<target name="javacc-generate">
 		<javacc target="${project.home}/${grammar}" javacchome="${project.home}/lib" />
 	</target>
 
-	<target name="compile-javacc" if="javacc.grammars">
-		<foreach list="${javacc.grammars}" param="grammar" target="javacc-generate"/>
+	<target name="compile-javacc" if="module.javacc.grammars">
+		<foreach list="${module.javacc.grammars}" param="grammar" target="javacc-generate"/>
 	</target>
 
 	<target name="wscompile-compile">
 		<basename property="module.dir" file="${build.properties}" suffix=".module"/>
 		<wscompile client="true" verbose="true" config="${config}"
 							 sourceBase="${project.home}/${module.dir}/src"
-							 base="${project.home}/build/${package.name}">
+							 base="${project.home}/build/${module.name}">
 			<classpath refid="project.class.path"/>
 		</wscompile>
 	</target>
 
-	<target name="wscompile" if="wscompile.configs">
+	<target name="wscompile" if="module.wscompile.configs">
 		<taskdef name="wscompile" classpathref="project.class.path" classname="com.sun.xml.rpc.tools.ant.Wscompile"/>
-		<foreach list="${wscompile.configs}" param="config" target="wscompile-compile"/>
+		<foreach list="${module.wscompile.configs}" param="config" target="wscompile-compile"/>
 	</target>
 
 	<target name="wsimport-compile">
 		<basename property="module.dir" file="${build.properties}" suffix=".module"/>
 		<property file="${project.home}/${service}.client" prefix="wsimport"/>
-		<wsimport destdir="${project.home}/build/${package.name}"
+		<wsimport destdir="${project.home}/build/${module.name}"
 							sourcedestdir="${project.home}/${module.dir}/src"
 							package="${wsimport.service.package}"
 							wsdl="${wsimport.service.wsdl}"
@@ -93,9 +93,9 @@
 		</wsimport>
 	</target>
 
-	<target name="wsimport" if="wsimport.services">
+	<target name="wsimport" if="module.wsimport.services">
 		<taskdef name="wsimport" classpathref="project.class.path" classname="com.sun.tools.ws.ant.WsImport2"/>
-		<foreach list="${wsimport.services}" param="service" target="wsimport-compile"/>
+		<foreach list="${module.wsimport.services}" param="service" target="wsimport-compile"/>
 	</target>
 
 	<target name="wsgen-compile">
@@ -107,8 +107,8 @@
 		</wsgen>
 	</target>
 
-	<target name="wsgen" if="wsgen.services">
-		<foreach list="${wsgen.services}" param="service" target="wsgen-compile"/>
+	<target name="wsgen" if="module.wsgen.services">
+		<foreach list="${module.wsgen.services}" param="service" target="wsgen-compile"/>
 	</target>
 
 	<target name="xjc-generate">
@@ -119,8 +119,8 @@
 		</xjc>
 	</target>
 
-	<target name="xjc" if="xjc.schemas">
-		<foreach list="${xjc.schemas}" param="schema" target="xjc-generate"/>
+	<target name="xjc" if="module.xjc.schemas">
+		<foreach list="${module.xjc.schemas}" param="schema" target="xjc-generate"/>
 	</target>
 
 	<target name="pre-compile" depends="clean, compile-antlr, compile-javacc, xjc, wsgen, wscompile, wsimport"/>
@@ -133,15 +133,15 @@
 		<property name="_scala.home" value="${scala.home}"/>
 	</target>
 
-	<target name="compile-scala" if="use.scala" depends="resolve-local-scala,resolve-global-scala">
-		<echo level="info" message="Building ${sources} with scala ${_scala.home}"/>
+	<target name="compile-scala" if="module.use.scala" depends="resolve-local-scala,resolve-global-scala">
+		<echo level="info" message="Building ${module.sources} with ${_scala.home}"/>
 		<path id="scala.class.path">
 			<path refid="project.class.path"/>
 			<fileset dir="${_scala.home}/lib" includes="*.jar"/>
 		</path>
 		<taskdef resource="scala/tools/ant/antlib.xml" classpathref="scala.class.path"/>
-		<scalac destdir="${project.home}/build/${package.name}" encoding="UTF-8" force="always" fork="true"
-		        classpathref="scala.class.path" srcdir="${sources}"/>
+		<scalac destdir="${project.home}/build/${module.name}" encoding="UTF-8" force="always" fork="true"
+		        classpathref="scala.class.path" srcdir="${module.sources}"/>
 	</target>
 
 	<target name="resolve-local-jdk" if="module.jdk.home">
@@ -153,55 +153,55 @@
 	</target>
 
 	<target name="compile-java" depends="resolve-local-jdk, resolve-global-jdk" if="use.java">
-		<echo level="info" message="Building with jdk ${_jdk.home}"/>
+		<echo level="info" message="Building with ${_jdk.home}"/>
 		<javac executable="${_jdk.home}/bin/javac" classpathref="project.class.path"
-					 srcdir="${project.home}/${sources}" destdir="${project.home}/build/${package.name}"
+					 srcdir="${project.home}/${module.sources}" destdir="${project.home}/build/${module.name}"
 					 debug="true" fork="true" encoding="UTF-8" target="1.5">
 			<compilerarg line="-Xlint:unchecked -Xlint:deprecation"/>
 		</javac>
 
 	</target>
 
-	<target name="include-packages" if="package.include">
-		<unjar dest="${project.home}/build/${package.name}">
-			<fileset dir="${project.home}" includes="${package.include}"/>
+	<target name="include-packages" if="module.include">
+		<unjar dest="${project.home}/build/${module.name}">
+			<fileset dir="${project.home}" includes="${module.include}"/>
 		</unjar>
 	</target>
 
-	<target name="sign" if="sign.keystore">
+	<target name="sign" if="module.sign.keystore">
 		<signjar jar="${project.home}/dist/${jar}" storetype="pkcs12"
-						 keystore="${project.home}/${sign.keystore}" alias="${sign.cert.alias}"
-						 storepass="${sign.storepass}"/>
+						 keystore="${project.home}/${module.sign.keystore}" alias="${module.sign.cert.alias}"
+						 storepass="${module.sign.storepass}"/>
 	</target>
 
 	<target name="pack">
-		<jar basedir="${project.home}/build/${package.name}"
-				 file="${project.home}/dist/${package.name}.jar">
+		<jar basedir="${project.home}/build/${module.name}"
+				 file="${project.home}/dist/${module.name}.jar">
 			<manifest>
-				<attribute name="Implementation-Title" value="${manifest.title}"/>
+				<attribute name="Implementation-Title" value="${module.title}"/>
 				<attribute name="Implementation-Version" value="${version.long}"/>
-				<attribute name="Implementation-Vendor" value="${manifest.vendor}"/>
-				<attribute name="Main-Class" value="${manifest.main.class}"/>
+				<attribute name="Implementation-Vendor" value="${module.vendor}"/>
+				<attribute name="Main-Class" value="${module.main.class}"/>
 			</manifest>
 		</jar>
 		<antcall target="sign">
-			<param name="jar" value="${package.name}.jar"/>
+			<param name="jar" value="${module.name}.jar"/>
 		</antcall>
 	</target>
 
 	<target name="jni" if="jni.class">
-		<mkdir dir="${project.home}/build/jni/${package.name}"/>
-		<javah force="true" destdir="${project.home}/build/jni/${package.name}" class="${jni.class}">
+		<mkdir dir="${project.home}/build/jni/${module.name}"/>
+		<javah force="true" destdir="${project.home}/build/jni/${module.name}" class="${jni.class}">
 			<classpath refid="project.class.path"/>
-			<classpath path="${project.home}/build/${package.name}"/>
+			<classpath path="${project.home}/build/${module.name}"/>
 		</javah>
 
-		<zip basedir="${project.home}/build/jni/${package.name}"
-				 file="${project.home}/dist/${package.name}-jni.zip"/>
+		<zip basedir="${project.home}/build/jni/${module.name}"
+				 file="${project.home}/dist/${module.name}-jni.zip"/>
 	</target>
 
 	<target name="build">
-		<echo message="Building ${manifest.title}"/>
+		<echo message="Building ${module.title}"/>
 		<antcall target="clean"/>
 		<antcall target="pre-compile"/>
 		<antcall target="compile-scala"/>

@@ -22,11 +22,11 @@
 #  THE SOFTWARE.
 #
 
-module.name = butter4s-servlet
-module.title = butter4s-servlet
+module.name = butter4s-logging
+module.title = butter4s-logging
 module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
-module.libraries = dist/*.jar, servlet/lib/*.jar
-module.sources = servlet/src
+module.libraries = logging/lib/*.jar
+module.sources = logging/src
 module.use.scala = true
-module.use.java = true
+#use.java = true
 #module.scala.home = ${scala.2.8.home}
