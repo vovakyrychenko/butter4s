@@ -4,7 +4,7 @@ import butter4s.servlet._
 import butter4s.reflect._
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import java.io.PrintWriter
-import annotation.target.param
+import butter4s.bind.json.JSONBind
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
@@ -55,8 +55,17 @@ trait RestServlet2 extends Servlet {
 			case None => response.sendError( HttpServletResponse.SC_NOT_FOUND, methodName + " not found" )
 			case Some( method ) => method.annotation[RestMethod] match {
 				case None => response.sendError( HttpServletResponse.SC_NOT_FOUND, methodName + " not exposed" )
-				case Some( a ) =>
-					method.invoke(this,method.parameters.map( p => Convert.to(request(p.annotation[RestParam].get.value).get, p.clazz) ))
+				case Some( a ) => try {
+					val result = method.invoke( this, method.parameters.map( p => Convert.to( request( p.annotation[RestParam].get.value ).get, p.clazz ) ) )
+					a.produces match {
+						case "application/json" =>
+							response.setContentType( a.produces + "; charset=" + a.charset )
+							response.send( _.println( if ( a.raw ) result else JSONBind.marshal( result ) ) )
+						case _ => response.setStatus( HttpServletResponse.SC_OK )
+					}
+				} catch {
+					case e: RestError => response.sendError( e.code, e.message )
+				}
 			}
 		}
 	}

@@ -33,7 +33,7 @@ import lang.Predicate.P
 package object lang {
 	//	implicit def identity[A]( a: A ) = a
 	//
-	implicit def bytes2String( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
+	implicit def bytes2string( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
 
 	implicit def string2bytes( s: String ) = s.getBytes( "UTF-8" )
 
