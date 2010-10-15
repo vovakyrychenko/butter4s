@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
 public @interface RestMethod {
 	String charset() default "UTF-8";
 
-	String produces();
+	String produces() default RestConstants.NONE;
 
 	String path() default RestConstants.DEFAULT;
 

@@ -29,4 +29,5 @@ package butter4s.servlet.rest;
  */
 interface RestConstants {
 	String DEFAULT = "DEFAULT";
+	String NONE = DEFAULT;
 }
