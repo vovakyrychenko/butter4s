@@ -24,9 +24,16 @@
 
 package butter4s.servlet.rest;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
+@Target( ElementType.PARAMETER )
+@Retention( RetentionPolicy.RUNTIME )
 public @interface RestMethod {
 	String charset() default "UTF-8";
 

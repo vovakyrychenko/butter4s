@@ -152,7 +152,7 @@
 		<property name="_jdk.home" value="${jdk.home}"/>
 	</target>
 
-	<target name="compile-java" depends="resolve-local-jdk, resolve-global-jdk" if="use.java">
+	<target name="compile-java" depends="resolve-local-jdk, resolve-global-jdk" if="module.use.java">
 		<echo level="info" message="Building with ${_jdk.home}"/>
 		<javac executable="${_jdk.home}/bin/javac" classpathref="project.class.path"
 					 srcdir="${project.home}/${module.sources}" destdir="${project.home}/build/${module.name}"
