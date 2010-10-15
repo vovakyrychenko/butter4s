@@ -103,6 +103,9 @@ class Parameter( val clazz: Class[_], val annotations: Array[java.lang.annotatio
 	}
 
 	def isAnnotationPresent( a: Class[_ <: Annotation] ) = annotations.exists( a eq _ )
+
+
+	override def toString = "param:" + clazz
 }
 
 trait AnnotationTarget {
