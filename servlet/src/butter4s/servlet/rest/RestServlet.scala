@@ -61,7 +61,7 @@ trait RestServlet2 extends Servlet {
 						case "application/json" =>
 							response.setContentType( a.produces + "; charset=" + a.charset )
 							response.send( _.println( if ( a.raw ) result else JSONBind.marshal( result ) ) )
-						case _ => response.setStatus( HttpServletResponse.SC_OK )
+						case _ => response.setStatus( if ( result == null ) HttpServletResponse.SC_OK else result.asInstanceOf[Int] )
 					}
 				} catch {
 					case e: RestError => response.sendError( e.code, e.message )
