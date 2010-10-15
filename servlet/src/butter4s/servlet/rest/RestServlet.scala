@@ -79,7 +79,9 @@ trait RestServlet2 extends Servlet {
 			case Some( method ) => method.annotation[RestMethod] match {
 				case None => response.sendError( HttpServletResponse.SC_NOT_FOUND, methodName + " not exposed" )
 				case Some( a ) => try {
-					val result = method.invoke( this, method.parameters.map( p => Convert.to( request( p.annotation[RestParam].get.value ).get, p.clazz ) ) )
+					val result = method.invoke( this, method.parameters.map( p =>
+						if ( p.clazz == classOf[RestRequest] ) new RestRequest( request, if ( a.path != RestConstants.DEFAULT ) a.path else method.name )
+						else Convert.to( request( p.annotation[RestParam].get.value ).get, p.clazz ) ) )
 					a.produces match {
 						case "application/json" =>
 							response.setContentType( a.produces + "; charset=" + a.charset )
