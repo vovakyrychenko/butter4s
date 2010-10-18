@@ -34,12 +34,12 @@ import java.lang.annotation.Target;
  */
 @Target( ElementType.PARAMETER )
 @Retention( RetentionPolicy.RUNTIME )
-public @interface RestMethod {
+public @interface Method {
 	String charset() default "UTF-8";
 
-	String produces() default RestConstants.NONE;
+	String produces() default Constants.NONE;
 
-	String path() default RestConstants.DEFAULT;
+	String path() default Constants.DEFAULT;
 
 	boolean raw() default false;
 }

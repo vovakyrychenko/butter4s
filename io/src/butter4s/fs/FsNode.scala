@@ -42,26 +42,6 @@ class Directory( path: String ) extends FsNode( path ) with TraversableLike[FsNo
 
 	def create = impl.mkdirs
 
-//	def copyToArray[B >: FsNode]( xs: Array[B], start: Int, len: Int ) = for ( (node, i) <- items.zip( start.to( start + len ) ) ) xs( i ) = node
-//
-//	def find( p: ( FsNode ) => Boolean ) = items.find( p )
-//
-//	def exists( p: ( FsNode ) => Boolean ): Boolean = items.exists( p )
-//
-//	def forall( p: ( FsNode ) => Boolean ) = items.forall( p )
-//
-//	def toStream = items.toStream
-//
-//	def toTraversable = items.toTraversable
-//
-//	def toIterator = items.toIterator
-//
-//	def isTraversableAgain = true
-//
-//	def hasDefiniteSize = true
-//
-//	def isEmpty = impl.list.length == 0
-//
 	def foreach[U]( f: ( FsNode ) => U ) = items.foreach( f )
 	
 	protected[this] def newBuilder: Builder[FsNode, List[FsNode]] = new ListBuffer[FsNode]

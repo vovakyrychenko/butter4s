@@ -24,10 +24,16 @@
 
 package butter4s.servlet.rest;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
-interface RestConstants {
-	String DEFAULT = "DEFAULT";
-	String NONE = DEFAULT;
+@Target( ElementType.PARAMETER )
+@Retention( RetentionPolicy.RUNTIME )
+public @interface Param {
+	String name();
 }

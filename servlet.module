@@ -25,7 +25,7 @@
 module.name = butter4s-servlet
 module.title = butter4s-servlet
 module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
-module.libraries = dist/*.jar, servlet/lib/*.jar
+module.libraries = dist/*.jar, servlet/lib/*.jar, logging/lib/*.jar
 module.sources = servlet/src
 module.use.scala = true
 module.use.java = true

@@ -97,15 +97,15 @@ class Parameter( val clazz: Class[_], val annotations: Array[java.lang.annotatio
 
 	def getAnnotations = annotations
 
-	def getAnnotation[T <: Annotation]( a: Class[T] ) = annotations.find( _ eq a ) match {
+	def getAnnotation[T <: Annotation]( a: Class[T] ) = annotations.find(  a isInstance _ ) match {
 		case None => null.asInstanceOf[T]
 		case Some( a ) => a.asInstanceOf[T]
 	}
 
-	def isAnnotationPresent( a: Class[_ <: Annotation] ) = annotations.exists( a eq _ )
+	def isAnnotationPresent( a: Class[_ <: Annotation] ) = annotations.exists( a isInstance _ )
 
 
-	override def toString = "param:" + clazz
+	override def toString = "param:" + clazz + ":" + annotations.toList
 }
 
 trait AnnotationTarget {

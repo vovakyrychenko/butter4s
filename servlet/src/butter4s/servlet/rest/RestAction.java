@@ -26,11 +26,12 @@ import java.lang.annotation.Target;
  */
 @Target( ElementType.METHOD )
 @Retention( RetentionPolicy.RUNTIME )
+@Deprecated
 public @interface RestAction {
 	String charset() default "UTF-8";
 
 	String produces() default "text/plain";
 
-	String path() default RestConstants.DEFAULT;
+	String path() default Constants.DEFAULT;
 }
 

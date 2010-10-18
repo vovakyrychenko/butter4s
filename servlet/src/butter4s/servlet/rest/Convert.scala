@@ -32,7 +32,7 @@ object Convert {
 		classOf[Int] -> {_.toInt},
 		classOf[java.lang.Integer] -> {_.toInt},
 		classOf[Long] -> {_.toLong},
-		classOf[java.lang.Long] -> ( _.toLong ),
+		classOf[java.lang.Long] -> {_.toLong},
 		classOf[Short] -> ( _.toShort ),
 		classOf[java.lang.Short] -> ( _.toShort ),
 		classOf[Byte] -> ( _.toByte ),
