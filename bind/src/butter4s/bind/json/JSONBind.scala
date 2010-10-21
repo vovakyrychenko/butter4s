@@ -33,9 +33,7 @@ import java.lang.reflect.{ParameterizedType, Type}
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 object JSONBind {
-	def marshal( a: AnyRef ): String = if ( a == null ) "null" else {
-		marshalObject( "\t", a.getClass, a )
-	}
+	def marshal( a: AnyRef ): String = if ( a == null ) "null" else marshalObject( "\t", a.getClass, a )
 
 	def marshalObject( tab: String, actualType: Type, a: AnyRef ): String = {
 		val fields: List[Field] = a.getClass.declaredFields.filter( field => field.annotatedWith[XmlElement] || field.annotatedWith[XmlAttribute] )

@@ -11,25 +11,17 @@
  ************************************************************************
  */
 
-package butter4s.reflect
-
-import org.junit.{Assert, Test}
+package butter4s.servlet.rest
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-class ClazzTestCase {
-	@Test def methodParam = {
-		val parameters = classOf[ClazzTestCase].declaredMethod( "testM" ).get.parameters
-		Assert.assertEquals( 1, parameters.size )
-		val ann = parameters( 0 ).getAnnotation( classOf[TestAnn] )
-		Assert.assertNotNull( ann )
-		Assert.assertTrue( classOf[TestAnn] isInstance ann )
-	}
+object MimeType {
+	val APPLICATION_JSON = "applicaton/json"
+	val APPLICATION_JSON_WRAPPED_VALUE = "applicaton/x-json-wrapped-value"
+	val TEXT_JAVASCRIPT = "text/javascript"
 
-	@Test def declaredMethods = {
-		println(classOf[Clazz[Any]].declaredMethods)
-	}
+	val jsonTypes = Array( APPLICATION_JSON, APPLICATION_JSON_WRAPPED_VALUE )
 
-	def testM( @TestAnn p1: String ) = null
+	def isJson( mt: String ) = jsonTypes.contains( mt )
 }
