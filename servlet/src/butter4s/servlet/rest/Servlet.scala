@@ -92,7 +92,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 			val params = m.parameters.view.filter( _.annotatedWith[Param] )
 			"\t\t" + m.name + ": function (" + params.map( _.annotation[Param].get.name ).mkString( "," ) + ") {\n" +
 					"\t\t\tvar result, error;\n" +
-					"\t\t\tnew Ajax.Request( '" + request.getRequestURI.substring( 0, request.getServletPath.length + 1 ) + m.name + "', {" +
+					"\t\t\tnew Ajax.Request( '" + request.getRequestURI.substring( 0, request.getServletPath.length + 1 ) + m.name + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
 					params.map( p => "\t\t\t\t\t" + p.annotation[Param].get.name + ":" + p.annotation[Param].get.name ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
