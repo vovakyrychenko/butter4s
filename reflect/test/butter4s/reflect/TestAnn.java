@@ -22,11 +22,17 @@
  *  THE SOFTWARE.
  */
 
-package butter4s.servlet.rest;
+package butter4s.reflect;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
-interface RestConstants {
-	String DEFAULT = "DEFAULT";
+@Retention( RetentionPolicy.RUNTIME)
+@Target( ElementType.PARAMETER)
+public @interface TestAnn {
 }

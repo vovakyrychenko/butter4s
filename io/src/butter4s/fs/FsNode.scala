@@ -2,6 +2,8 @@ package butter4s.fs
 
 import java.io.FileOutputStream
 import butter4s.io._
+import collection.{IterableLike, TraversableLike}
+import collection.mutable.{Builder, ListBuffer}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
@@ -33,13 +35,14 @@ class File( path: String ) extends FsNode( path ) {
 	lazy val parent = new Directory( impl.getParent )
 }
 
-class Directory( path: String ) extends FsNode( path ) {
-	def list = impl.listFiles.map( file =>
+class Directory( path: String ) extends FsNode( path ) with TraversableLike[FsNode,List[FsNode]] with Immutable {
+	private def items = impl.listFiles.view.map( file =>
 		if ( file.isDirectory ) new Directory( file.getPath )
-		else new File( file.getPath )
-		)
+		else new File( file.getPath ) )
 
 	def create = impl.mkdirs
 
-	def list( p: FsNode => Boolean ): Array[FsNode] = list.filter( p )
+	def foreach[U]( f: ( FsNode ) => U ) = items.foreach( f )
+	
+	protected[this] def newBuilder: Builder[FsNode, List[FsNode]] = new ListBuffer[FsNode]
 }

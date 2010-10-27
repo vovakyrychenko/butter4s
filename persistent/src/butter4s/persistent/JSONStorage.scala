@@ -25,12 +25,12 @@ trait JSONStorage[T <: AnyRef] {
 		else None
 	}
 
-	def list( implicit m: Manifest[T] ): Array[T] = synchronized {
-		new Directory( location ).list( _.name.endsWith( ".json" ) ).map( f => JSONBind.unmarshal[T]( f.asInstanceOf[File].read ) )
+	def list( implicit m: Manifest[T] ): List[T] = synchronized {
+		new Directory( location ).filter( _.name.endsWith( ".json" ) ).map( f => JSONBind.unmarshal[T]( f.asInstanceOf[File].read ) )
 	}
 
-	def listRaw: Array[String] = synchronized {
-		new Directory( location ).list( _.name.endsWith( ".json" ) ).map( _.asInstanceOf[File].read[String] )
+	def listRaw: List[String] = synchronized {
+		new Directory( location ).filter( _.name.endsWith( ".json" ) ).map( _.asInstanceOf[File].read[String] )
 	}
 
 	def store( path: String, obj: T ) = synchronized {

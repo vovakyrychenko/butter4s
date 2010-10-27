@@ -88,6 +88,9 @@ class Method( val impl: JMethod ) extends AnnotationTarget {
 	lazy val name = impl.getName
 
 	lazy val parameters = impl.getParameterTypes.zip( impl.getParameterAnnotations ).map {case (c, a) => new Parameter( c, a )}
+
+
+	override def toString = impl.toGenericString
 }
 
 class Parameter( val clazz: Class[_], val annotations: Array[java.lang.annotation.Annotation] ) extends AnnotatedElement with AnnotationTarget {
@@ -97,16 +100,19 @@ class Parameter( val clazz: Class[_], val annotations: Array[java.lang.annotatio
 
 	def getAnnotations = annotations
 
-	def getAnnotation[T <: Annotation]( a: Class[T] ) = annotations.find( _ eq a ) match {
+	def getAnnotation[T <: Annotation]( a: Class[T] ) = annotations.find( a isInstance _ ) match {
 		case None => null.asInstanceOf[T]
 		case Some( a ) => a.asInstanceOf[T]
 	}
 
-	def isAnnotationPresent( a: Class[_ <: Annotation] ) = annotations.exists( a eq _ )
+	def isAnnotationPresent( a: Class[_ <: Annotation] ) = annotations.exists( a isInstance _ )
+
+
+	override def toString = "param:" + clazz + ":" + annotations.toList
 }
 
 trait AnnotationTarget {
-	val impl: AnnotatedElement
+	protected val impl: AnnotatedElement
 
 	def annotatedWith[A <: java.lang.annotation.Annotation : Manifest] = impl.isAnnotationPresent( manifest[A].erasure.asInstanceOf[Class[A]] )
 
