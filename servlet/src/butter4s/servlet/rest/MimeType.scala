@@ -17,8 +17,8 @@ package butter4s.servlet.rest
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 object MimeType {
-	val APPLICATION_JSON = "applicaton/json"
-	val APPLICATION_JSON_WRAPPED_VALUE = "applicaton/x-json-wrapped-value"
+	val APPLICATION_JSON = "application/json"
+	val APPLICATION_JSON_WRAPPED_VALUE = "application/x-json-wrapped-value"
 	val TEXT_JAVASCRIPT = "text/javascript"
 
 	val jsonTypes = Array( APPLICATION_JSON, APPLICATION_JSON_WRAPPED_VALUE )
