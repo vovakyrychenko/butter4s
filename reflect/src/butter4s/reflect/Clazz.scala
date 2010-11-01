@@ -48,6 +48,8 @@ class Type( val impl: JType ) {
 		case t: ParameterizedType => new Clazz[A]( t.getRawType.asInstanceOf[Class[_]] )
 		case _ => throw new IllegalArgumentException( "could not get class for " + impl )
 	}
+	
+	def assignableFrom[C: Manifest] = toClass.assignableFrom[C]
 }
 
 class Clazz[A]( val impl: Class[_] ) extends AnnotationTarget {
@@ -87,13 +89,13 @@ class Method( val impl: JMethod ) extends AnnotationTarget {
 
 	lazy val name = impl.getName
 
-	lazy val parameters = impl.getParameterTypes.zip( impl.getParameterAnnotations ).map {case (c, a) => new Parameter( c, a )}
+	lazy val parameters = impl.getGenericParameterTypes.zip( impl.getParameterAnnotations ).map {case (t, a) => new Parameter( t, a )}
 
 
 	override def toString = impl.toGenericString
 }
 
-class Parameter( val clazz: Class[_], val annotations: Array[java.lang.annotation.Annotation] ) extends AnnotatedElement with AnnotationTarget {
+class Parameter( val genericType: Type, val annotations: Array[java.lang.annotation.Annotation] ) extends AnnotatedElement with AnnotationTarget {
 	override val impl = this
 
 	def getDeclaredAnnotations = annotations
@@ -108,7 +110,7 @@ class Parameter( val clazz: Class[_], val annotations: Array[java.lang.annotatio
 	def isAnnotationPresent( a: Class[_ <: Annotation] ) = annotations.exists( a isInstance _ )
 
 
-	override def toString = "param:" + clazz + ":" + annotations.toList
+	override def toString = "param:" + genericType + ":" + annotations.toList
 }
 
 trait AnnotationTarget {

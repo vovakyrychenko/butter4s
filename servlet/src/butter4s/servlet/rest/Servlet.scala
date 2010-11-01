@@ -25,6 +25,7 @@ package butter4s.servlet.rest
 
 import butter4s.servlet._
 import butter4s.reflect._
+import butter4s.lang._
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import HttpServletResponse._
 import butter4s.bind.json.JSONBind
@@ -66,16 +67,16 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 				case Some( restMethod ) =>
 					val result = method.invoke( this, method.parameters.map( p => {
 						log.debug( p )
-						if ( p.clazz.assignableFrom[Request] ) request
+						if ( p.genericType.assignableFrom[Request] ) request
 						else p.annotation[Param] match {
-							case None => respond( SC_INTERNAL_SERVER_ERROR, "method parameter of type " + p.clazz + " is not annotated properly" )
+							case None => respond( SC_INTERNAL_SERVER_ERROR, "method parameter of type " + p.genericType + " is not annotated properly" )
 							case Some( restParam ) => Convert.to( ( restParam.from match {
 								case Param.From.PARAM => request( restParam.name )
 								case Param.From.PATH => request( restMethod.path, restParam.name )
 							} ) match {
 								case None => respond( SC_BAD_REQUEST, restParam.name + " is required" )
 								case Some( value ) => value
-							}, restParam.typeHint, p.clazz ).asInstanceOf[AnyRef]
+							}, restParam.typeHint, p.genericType ).asInstanceOf[AnyRef]
 						}
 					} ): _ * )
 					restMethod.produces match {
@@ -108,7 +109,12 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 					"\t\t\tvar result, error;\n" +
 					"\t\t\tnew Ajax.Request( '" + request.getRequestURI.substring( 0, request.getServletPath.length + 1 ) + m.name + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
-					params.map( p => "\t\t\t\t\t" + p.annotation[Param].get.name + ":" + p.annotation[Param].get.name ).mkString( ",\n" ) + "\n" +
+					params.map( p => {
+						val restParam = p.annotation[Param].get
+						"\t\t\t\t\t" + restParam.name + ":" + wrapIf( p.genericType.assignableFrom[List[_]] )( "[",
+							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ),
+							"]" )
+					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( m.annotation[Method].get.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
@@ -131,7 +137,12 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 			"\t\t" + m.name + ": function (" + ( params.map( _.annotation[Param].get.name ) :+ "succeed" :+ "failed" ).mkString( "," ) + ") {\n" +
 					"\t\t\tnew Ajax.Request( '" + request.getRequestURI.substring( 0, request.getServletPath.length + 1 ) + m.name + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
-					params.map( p => "\t\t\t\t\t" + p.annotation[Param].get.name + ":" + p.annotation[Param].get.name ).mkString( ",\n" ) + "\n" +
+					params.map( p => {
+						val restParam = p.annotation[Param].get
+						"\t\t\t\t\t" + restParam.name + ":" + wrapIf( p.genericType.assignableFrom[List[_]] )( "[",
+							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ),
+							"]" )
+					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( m.annotation[Method].get.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
@@ -151,6 +162,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 
 
 	def respond( code: Int, reason: String ) = throw new ImmediateResponse( code, reason )
+
 }
 
 

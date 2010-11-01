@@ -40,4 +40,7 @@ package object lang {
 	implicit def function2predicate[A]( f: A => Boolean ): P[A] = cast( f )
 
 	def not[A]( f: A => Boolean ) = f.not
+
+	def wrapIf( cond: Boolean )( left: => String, value: Any, right: => String ) = if ( cond ) left + value + right else "" + value
+
 }

@@ -24,31 +24,34 @@
 package butter4s.servlet.rest
 
 import butter4s.bind.json.JSONBind
+import butter4s.reflect._
+import java.lang.reflect.ParameterizedType
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
 object Convert {
-	private val converters: Map[String, ( (String, Class[_]) => Any )] = Map(
-		classOf[Int].getName -> {(s, _) => s.toInt},
-		classOf[java.lang.Integer].getName -> {(s, _) => s.toInt},
-		classOf[Long].getName -> {(s, _) => s.toLong},
-		classOf[java.lang.Long].getName -> {(s, _) => s.toLong},
-		classOf[Short].getName -> ( (s, _) => s.toShort ),
-		classOf[java.lang.Short].getName -> ( (s, _) => s.toShort ),
-		classOf[Byte].getName -> ( (s, _) => s.toByte ),
-		classOf[java.lang.Byte].getName -> ( (s, _) => s.toByte ),
-		classOf[Float].getName -> ( (s, _) => s.toFloat ),
-		classOf[java.lang.Float].getName -> ( (s, _) => s.toFloat ),
-		classOf[Double].getName -> ( (s, _) => s.toDouble ),
-		classOf[java.lang.Double].getName -> {(s, _) => s.toDouble},
-		classOf[Boolean].getName -> {(s, _) => s.toBoolean},
-		classOf[java.lang.Boolean].getName -> {(s, _) => s.toBoolean},
-		classOf[String].getName -> {(s, _) => s},
-		MimeType.APPLICATION_JSON -> {(s, c) => JSONBind.unmarshal( s, c )}
+	private val converters: Map[String, ( (AnyRef, String, Type) => Any )] = Map(
+		classOf[Int].getName -> {(s, _, _) => s.asInstanceOf[String].toInt},
+		classOf[java.lang.Integer].getName -> {(s, _, _) => s.asInstanceOf[String].toInt},
+		classOf[Long].getName -> {(s, _, _) => s.asInstanceOf[String].toLong},
+		classOf[java.lang.Long].getName -> {(s, _, _) => s.asInstanceOf[String].toLong},
+		classOf[Short].getName -> ( (s, _, _) => s.asInstanceOf[String].toShort ),
+		classOf[java.lang.Short].getName -> ( (s, _, _) => s.asInstanceOf[String].toShort ),
+		classOf[Byte].getName -> ( (s, _, _) => s.asInstanceOf[String].toByte ),
+		classOf[java.lang.Byte].getName -> ( (s, _, _) => s.asInstanceOf[String].toByte ),
+		classOf[Float].getName -> ( (s, _, _) => s.asInstanceOf[String].toFloat ),
+		classOf[java.lang.Float].getName -> ( (s, _, _) => s.asInstanceOf[String].toFloat ),
+		classOf[Double].getName -> ( (s, _, _) => s.asInstanceOf[String].toDouble ),
+		classOf[java.lang.Double].getName -> {(s, _, _) => s.asInstanceOf[String].toDouble},
+		classOf[Boolean].getName -> {(s, _, _) => s.asInstanceOf[String].toBoolean},
+		classOf[java.lang.Boolean].getName -> {(s, _, _) => s.asInstanceOf[String].toBoolean},
+		classOf[String].getName -> {(s, _, _) => s.asInstanceOf[String]},
+		classOf[List[_]].getName -> {(xs, hint, xst) => xs.asInstanceOf[List[String]].map( to( _, hint, xst.impl.asInstanceOf[ParameterizedType].getActualTypeArguments()( 0 ) ) )},
+		MimeType.APPLICATION_JSON -> {(s, _, c) => JSONBind.unmarshal( s.asInstanceOf[String], c )}
 		)
 
-	def to( value: String, hint: String, targetType: Class[_] ) =
-		( if ( hint == MimeType.APPLICATION_JAVA_CLASS ) converters( targetType.getName ) else converters( hint ) )( value, targetType )
+	def to( value: AnyRef, hint: String, targetType: Type ) =
+		( if ( hint == MimeType.APPLICATION_JAVA_CLASS ) converters( targetType.toClass[AnyRef].getName ) else converters( hint ) )( value, hint, targetType )
 }
