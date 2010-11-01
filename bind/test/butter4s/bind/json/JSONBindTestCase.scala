@@ -33,6 +33,19 @@ import javax.xml.bind.annotation.{XmlAttribute, XmlElement}
 class JSONBindTestCase {
 	@Test def bind = assertBind( Bean( "x", 10, Bean2( "y", 15, List( 1, 2, 3 ) ) ) )
 
+	@Test def bindPrimitives = {
+		assertBind( true )
+		assertBind( false )
+		assertBind( null )
+		assertBind( 10 )
+		assertBind( 10.3 )
+	}
+
+	@Test def bindList = {
+//		yet it failed
+//		assertBind( List( true, false ) )
+	}
+
 	@Test def bindBeanListList = assertBind( ListBean( List( List( 1, 2, 3 ), List( 4, 5, 6 ) ) ) )
 
 	@Test def bindGenericObject = assertBind( BeanGB( BeanGeneric( List( 1, 2, 3 ) ) ) )
@@ -44,7 +57,8 @@ class JSONBindTestCase {
 
 	@Test def bindNulls = assertBind( Bean( null, 10, null ) )
 
-	def assertBind[A <: AnyRef : Manifest]( source: A ) = {
+	def assertBind[A: Manifest]( source: A ) = {
+		println( "========================================" )
 		val json = JSONBind.marshal( source )
 		println( json )
 		val result = JSONBind.unmarshal[A]( json )

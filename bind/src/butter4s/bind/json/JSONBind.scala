@@ -26,65 +26,73 @@ package butter4s.bind.json
 
 import butter4s.reflect._
 import javax.xml.bind.annotation.{XmlElement, XmlAttribute}
-import javax.xml.bind.{MarshalException, UnmarshalException}
-import java.lang.reflect.{ParameterizedType, Type}
-
+import javax.xml.bind.UnmarshalException
+import java.lang.reflect.{TypeVariable, ParameterizedType, Type}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 object JSONBind {
-	def marshal( a: AnyRef ): String = if ( a == null ) "null" else marshalObject( "\t", a.getClass, a )
+	def marshal( value: Any ): String = marshalUnknown( "\t", value )
 
-	private def marshalObject( tab: String, actualType: Type, a: AnyRef ): String = {
-		val fields: List[Field] = a.getClass.declaredFields.filter( field => field.annotatedWith[XmlElement] || field.annotatedWith[XmlAttribute] )
-		"{\n" +
-				fields.map( field => tab + "\"" + field.name + "\": " + marshalValue( tab + "\t", field.getGenericType.resolveWith( actualType ), field.get( a ) ) ).mkString( ",\n" ) +
+	private def marshalUnknown( tab: String, value: Any ) = value match {
+		case null => "null"
+		case v: String => "\"" + quote( v ) + "\""
+		case v: Int => v.toString
+		case v: Long => v.toString
+		case v: Float => v.toString
+		case v: Double => v.toString
+		case v: Byte => v.toString
+		case v: Short => v.toString
+		case v: Boolean => v.toString
+		case v: AnyRef if marshallers.exists {case (c, _) => c.isAssignableFrom( v.getClass )} => marshallers.find {case (c, _) => c.isAssignableFrom( v.getClass )}.get._2.marshal( tab, v )
+		case v: AnyRef => marshalObject( tab, v )
+	}
+
+	private def marshalObject( tab: String, obj: AnyRef ): String =
+		"{\n" + obj.getClass.declaredFields.filter( field => field.annotatedWith[XmlElement] || field.annotatedWith[XmlAttribute] )
+				.map( field => tab + "\"" + field.name + "\": " + marshalUnknown( tab + "\t", field.get( obj ) ) ).mkString( ",\n" ) +
 				"\n" + tab.substring( 1 ) + "}"
+
+	def unmarshal[A: Manifest]( input: String ): A = {
+		println(manifest[A].erasure + ": " + manifest[A].typeArguments)
+		unmarshal( input, manifest[A].erasure ).asInstanceOf[A]
 	}
 
-	private def marshalValue( tab: String, t: Type, value: Any ): String = {
-		def _marshal( t: Type, filter: Class[_] => Boolean ) = marshallers.find( t => filter( t._1 ) ) match {
-			case Some( (_, m) ) => m.marshal( tab, value, t )
-			case None if value.isInstanceOf[AnyRef] => marshalObject( tab, t, value.asInstanceOf[AnyRef] )
-			case _ => throw new MarshalException( "could not marshal " + value + " as type " + t )
-		}
-
-		if ( value == null ) "null" else t match {
-			case clazz: Class[_] => _marshal( clazz, c => clazz.isAssignableFrom( c ) )
-			case pt: ParameterizedType => _marshal( pt, c => pt.getRawType.asInstanceOf[Class[_]].isAssignableFrom( c ) )
-			case t => throw new MarshalException( "unresolved type " + t + ":" + t.getClass + " for object " + value )
-		}
+	def unmarshal( input: String, t: Class[_] ): Any = JSON.parse( input ) match {
+		case None => throw new UnmarshalException( "could not parse: " + input )
+		case Some( value ) => unmarshalUnknown( t, value )
 	}
 
-	def unmarshal[A <: AnyRef : Manifest]( input: String ): A = unmarshal[A]( input, manifest[A].erasure.asInstanceOf[Class[A]] )
-
-	def unmarshal[A <: AnyRef]( input: String, t: Type ): A = JSON.parse( input ) match {
-		case None => throw new UnmarshalException( "could not parse", input )
-		case Some( map ) => unmarshalObject[A]( t, map.asInstanceOf[Map[String, Any]] )
+	private def unmarshalUnknown( t: Type, value: Any ) = value match {
+		case null => null
+		case v: String => v
+		case v: Boolean => v
+		case v: Double => unmarshalNumber( t, v )
+		case v: AnyRef if marshallers.exists {case (c, _) => c.isAssignableFrom( t.toClass[AnyRef] )} => marshallers.find {case (c, _) => c.isAssignableFrom( t.toClass[AnyRef] )}.get._2.unmarshal( v, t.asInstanceOf[ParameterizedType] )
+		case v: Map[String, Any] => unmarshalObject( t, v )
 	}
 
-	private def unmarshalObject[A <: AnyRef]( t: Type, map: Map[String, Any] ): A = {
-		val clazz = t.toClass[A]
-		val a = clazz.newInstance
+	private def unmarshalNumber( t: Type, v: Double ): AnyVal =
+		if ( t.assignableFrom[Int] ) v.toInt
+		else if ( t.assignableFrom[java.lang.Integer] ) v.toInt
+		else if ( t.assignableFrom[Long] ) v.toLong
+		else if ( t.assignableFrom[java.lang.Long] ) v.toLong
+		else if ( t.assignableFrom[Short] ) v.toShort
+		else if ( t.assignableFrom[java.lang.Short] ) v.toShort
+		else if ( t.assignableFrom[Byte] ) v.toByte
+		else if ( t.assignableFrom[java.lang.Byte] ) v.toByte
+		else if ( t.assignableFrom[Float] ) v.toFloat
+		else if ( t.assignableFrom[java.lang.Float] ) v.toFloat else v
+
+	private def unmarshalObject( t: Type, map: Map[String, Any] ): AnyRef = {
+		val clazz = t.toClass[AnyRef]
+		val obj = clazz.newInstance
 		for ( (name, value) <- map ) clazz.declaredField( name ) match {
 			case None => throw new UnmarshalException( "field " + name + " is not declared in " + clazz )
-			case Some( field ) => field.set( a, unmarshalValue( field.getGenericType.resolveWith( t ), value ) )
+			case Some( field ) => field.set( obj, unmarshalUnknown( if ( field.getGenericType.isInstanceOf[TypeVariable[_]] ) field.getGenericType.resolveWith( t.asInstanceOf[ParameterizedType] ) else field.getGenericType, value ) )
 		}
-		a
-	}
-
-	private def unmarshalValue( t: Type, value: Any ): Any = {
-		def _unmarshal( t: Type, filter: Class[_] => Boolean ) = marshallers.find( t => filter( t._1 ) ) match {
-			case Some( (_, m) ) => m.unmarshal( value, t )
-			case None if value.isInstanceOf[Map[_, _]] => unmarshalObject[AnyRef]( t, value.asInstanceOf[Map[String, Any]] )
-			case _ => throw new UnmarshalException( "could not unmarshal " + value + " as " + t )
-		}
-
-		if ( value == null ) null else t match {
-			case clazz: Class[_] => _unmarshal( clazz, t => clazz.isAssignableFrom( t ) )
-			case pt: ParameterizedType => _unmarshal( pt, t => pt.getRawType.asInstanceOf[Class[_]].isAssignableFrom( t ) )
-		}
+		obj
 	}
 
 	val dangerous = Map( '\\' -> "\\\\", '"' -> "\\\"", '\n' -> "\\n", '\r' -> "\\r", '\t' -> "\\t" )
@@ -94,49 +102,23 @@ object JSONBind {
 		case None => seed + c
 	} )
 
-	private var marshallers: Map[Class[_], Marshaller] = Map(
-		classOf[Int] -> new NumericMarshaller( _.toInt ),
-		classOf[java.lang.Integer] -> new NumericMarshaller( _.toInt ),
-		classOf[Long] -> new NumericMarshaller( _.toLong ),
-		classOf[java.lang.Long] -> new NumericMarshaller( _.toLong ),
-		classOf[Short] -> new NumericMarshaller( _.toShort ),
-		classOf[java.lang.Short] -> new NumericMarshaller( _.toShort ),
-		classOf[Byte] -> new NumericMarshaller( _.toByte ),
-		classOf[java.lang.Byte] -> new NumericMarshaller( _.toByte ),
-		classOf[Float] -> new NumericMarshaller( _.toFloat ),
-		classOf[java.lang.Float] -> new NumericMarshaller( _.toFloat ),
-		classOf[Double] -> new NumericMarshaller( d => d ),
-		classOf[java.lang.Double] -> new NumericMarshaller( d => d ),
-		classOf[Boolean] -> new ParametricMarshaller( unmarshaller = b => b ),
-		classOf[java.lang.Boolean] -> new ParametricMarshaller( unmarshaller = b => b ),
-		classOf[String] -> new ParametricMarshaller( s => "\"" + quote( s.toString ) + "\"", s => s ),
-		classOf[List[_]] -> ListMarshaller
-		)
+	private var marshallers: Map[Class[_], Marshaller] = Map( classOf[List[_]] -> ListMarshaller )
 
 	def registerMarshaller( c: Class[_], m: Marshaller ) = synchronized {
 		marshallers += c -> m
 	}
 
 	trait Marshaller {
-		def marshal( tab: String, a: Any, t: Type ): String
+		def marshal( tab: String, a: Any ): String
 
-		def unmarshal( s: Any, t: Type ): Any
+		def unmarshal( s: Any, t: ParameterizedType ): Any
 	}
-
-	class ParametricMarshaller( marshaller: ( Any => String ) = ( _.toString ), unmarshaller: ( Any => Any ) ) extends Marshaller {
-		def marshal( tab: String, a: Any, t: Type ) = marshaller( a )
-
-		def unmarshal( s: Any, t: Type ) = unmarshaller( s )
-	}
-
-	class NumericMarshaller( unmarshaller: ( Double => Any ) ) extends ParametricMarshaller( unmarshaller = a => unmarshaller( a.asInstanceOf[Double] ) )
 
 	object ListMarshaller extends Marshaller {
-		def unmarshal( value: Any, pt: Type ) = value.asInstanceOf[List[_]].map( unmarshalValue( pt.asInstanceOf[ParameterizedType].getActualTypeArguments()( 0 ), _ ) )
+		def unmarshal( value: Any, pt: ParameterizedType ) = value.asInstanceOf[List[_]].map( unmarshalUnknown( pt.getActualTypeArguments()( 0 ), _ ) )
 
-		def marshal( tab: String, a: Any, pt: Type ) = "[\n" + a.asInstanceOf[List[_]].map(
-			e => tab + marshalValue( tab + "\t", pt.asInstanceOf[ParameterizedType].getActualTypeArguments()( 0 ), e )
-			).mkString( ",\n" ) + "\n" + tab.substring( 1 ) + "]"
+		def marshal( tab: String, a: Any ) = "[\n" + a.asInstanceOf[List[_]].map(
+			e => tab + marshalUnknown( tab + "\t", e ) ).mkString( ",\n" ) + "\n" + tab.substring( 1 ) + "]"
 	}
 }
 

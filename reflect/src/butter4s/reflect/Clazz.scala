@@ -33,14 +33,9 @@ import java.lang.Class
  */
 
 class Type( val impl: JType ) {
-	def resolveWith( actual: JType ) = impl match {
-		case t: Class[_] => t
-		case t: ParameterizedType => t
-		case tv: TypeVariable[_] =>
-			assert( actual.isInstanceOf[ParameterizedType], "actual should be ParameterizedType" )
-			val pt = actual.asInstanceOf[ParameterizedType]
-			val clazz = pt.getRawType.asInstanceOf[Class[_]]
-			pt.getActualTypeArguments()( clazz.getTypeParameters.findIndexOf( _.getName == tv.getName ) )
+	def resolveWith( actual: ParameterizedType ) = {
+		assert( impl.isInstanceOf[TypeVariable[_]], " should be type variable" )
+		actual.getActualTypeArguments()( actual.toClass[AnyRef].getTypeParameters.findIndexOf( _.getName == impl.asInstanceOf[TypeVariable[_]].getName ) )
 	}
 
 	def toClass[A]: Clazz[A] = impl match {
@@ -48,9 +43,10 @@ class Type( val impl: JType ) {
 		case t: ParameterizedType => new Clazz[A]( t.getRawType.asInstanceOf[Class[_]] )
 		case _ => throw new IllegalArgumentException( "could not get class for " + impl )
 	}
-	
+
 	def assignableFrom[C: Manifest] = toClass.assignableFrom[C]
 
+	def assignableFrom( c: Class[_] ) = toClass.isAssignableFrom( c )
 
 	override def toString = impl.toString
 }
@@ -85,6 +81,8 @@ class Field( val impl: JField ) extends AnnotationTarget {
 	impl.setAccessible( true )
 
 	lazy val name = impl.getName
+
+	override def toString = impl.toGenericString
 }
 
 class Method( val impl: JMethod ) extends AnnotationTarget {
