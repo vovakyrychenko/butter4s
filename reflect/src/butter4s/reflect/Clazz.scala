@@ -50,6 +50,9 @@ class Type( val impl: JType ) {
 	}
 	
 	def assignableFrom[C: Manifest] = toClass.assignableFrom[C]
+
+
+	override def toString = impl.toString
 }
 
 class Clazz[A]( val impl: Class[_] ) extends AnnotationTarget {

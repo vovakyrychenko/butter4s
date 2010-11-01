@@ -96,7 +96,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 	} catch {
 		case e: ImmediateResponse => error( e, e );
 		response.sendError( e.code, e.message )
-		case e: InvocationTargetException if e.getTargetException.isInstanceOf[ImmediateResponse] => error( e, e );
+		case e: InvocationTargetException if e.getTargetException.isInstanceOf[ImmediateResponse] => error( e.getTargetException, e.getTargetException );
 		response.sendError( e.getTargetException.asInstanceOf[ImmediateResponse].code, e.getTargetException.getMessage )
 		case e: InvocationTargetException => throw e.getTargetException
 	}

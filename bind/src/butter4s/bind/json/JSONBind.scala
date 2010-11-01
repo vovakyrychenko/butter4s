@@ -29,20 +29,21 @@ import javax.xml.bind.annotation.{XmlElement, XmlAttribute}
 import javax.xml.bind.{MarshalException, UnmarshalException}
 import java.lang.reflect.{ParameterizedType, Type}
 
+
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 object JSONBind {
 	def marshal( a: AnyRef ): String = if ( a == null ) "null" else marshalObject( "\t", a.getClass, a )
 
-	def marshalObject( tab: String, actualType: Type, a: AnyRef ): String = {
+	private def marshalObject( tab: String, actualType: Type, a: AnyRef ): String = {
 		val fields: List[Field] = a.getClass.declaredFields.filter( field => field.annotatedWith[XmlElement] || field.annotatedWith[XmlAttribute] )
 		"{\n" +
 				fields.map( field => tab + "\"" + field.name + "\": " + marshalValue( tab + "\t", field.getGenericType.resolveWith( actualType ), field.get( a ) ) ).mkString( ",\n" ) +
 				"\n" + tab.substring( 1 ) + "}"
 	}
 
-	def marshalValue( tab: String, t: Type, value: Any ): String = {
+	private def marshalValue( tab: String, t: Type, value: Any ): String = {
 		def _marshal( t: Type, filter: Class[_] => Boolean ) = marshallers.find( t => filter( t._1 ) ) match {
 			case Some( (_, m) ) => m.marshal( tab, value, t )
 			case None if value.isInstanceOf[AnyRef] => marshalObject( tab, t, value.asInstanceOf[AnyRef] )
@@ -56,17 +57,14 @@ object JSONBind {
 		}
 	}
 
-	def unmarshal[A <: AnyRef : Manifest]( input: String ): A = JSON.parse( input ) match {
-		case None => throw new UnmarshalException( "could not parse", input )
-		case Some( map ) => unmarshal[A]( manifest[A].erasure.asInstanceOf[Class[A]], map.asInstanceOf[Map[String, Any]] )
-	}
+	def unmarshal[A <: AnyRef : Manifest]( input: String ): A = unmarshal[A]( input, manifest[A].erasure.asInstanceOf[Class[A]] )
 
 	def unmarshal[A <: AnyRef]( input: String, t: Type ): A = JSON.parse( input ) match {
 		case None => throw new UnmarshalException( "could not parse", input )
-		case Some( map ) => unmarshal[A]( t, map.asInstanceOf[Map[String, Any]] )
+		case Some( map ) => unmarshalObject[A]( t, map.asInstanceOf[Map[String, Any]] )
 	}
 
-	def unmarshal[A <: AnyRef]( t: Type, map: Map[String, Any] ): A = {
+	private def unmarshalObject[A <: AnyRef]( t: Type, map: Map[String, Any] ): A = {
 		val clazz = t.toClass[A]
 		val a = clazz.newInstance
 		for ( (name, value) <- map ) clazz.declaredField( name ) match {
@@ -76,10 +74,10 @@ object JSONBind {
 		a
 	}
 
-	def unmarshalValue( t: Type, value: Any ): Any = {
+	private def unmarshalValue( t: Type, value: Any ): Any = {
 		def _unmarshal( t: Type, filter: Class[_] => Boolean ) = marshallers.find( t => filter( t._1 ) ) match {
 			case Some( (_, m) ) => m.unmarshal( value, t )
-			case None if value.isInstanceOf[Map[_, _]] => unmarshal[AnyRef]( t, value.asInstanceOf[Map[String, Any]] )
+			case None if value.isInstanceOf[Map[_, _]] => unmarshalObject[AnyRef]( t, value.asInstanceOf[Map[String, Any]] )
 			case _ => throw new UnmarshalException( "could not unmarshal " + value + " as " + t )
 		}
 

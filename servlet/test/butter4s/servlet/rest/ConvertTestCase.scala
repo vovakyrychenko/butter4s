@@ -13,16 +13,21 @@
 
 package butter4s.servlet.rest
 
+import javax.xml.bind.annotation.XmlAttribute
+import annotation.target.field
+import org.junit.{Assert, Test}
+import butter4s.bind.json.JSONBind
+
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-object MimeType {
-	final val APPLICATION_JSON = "application/json"
-	final val APPLICATION_JSON_WRAPPED_VALUE = "application/x-json-wrapped-value"
-	final val TEXT_JAVASCRIPT = "text/javascript"
-	final val APPLICATION_JAVA_CLASS = Constants.APPLICATION_JAVA_CLASS
+class ConvertTestCase {
+	@Test def convertJSON = {
+		val test = Bean( "test" )
+		Assert.assertEquals( test, Convert.to( JSONBind.marshal( test ), MimeType.APPLICATION_JSON, classOf[Bean] ) )
+	}
+}
 
-	final val jsonTypes = Array( APPLICATION_JSON, APPLICATION_JSON_WRAPPED_VALUE )
-
-	def isJson( mt: String ) = jsonTypes.contains( mt )
+case class Bean( @( XmlAttribute@field ) var name: String ) {
+	def this() = this ( null )
 }
