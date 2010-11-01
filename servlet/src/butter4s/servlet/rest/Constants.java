@@ -30,4 +30,5 @@ package butter4s.servlet.rest;
 interface Constants {
 	String DEFAULT = "DEFAULT";
 	String NONE = DEFAULT;
+	String APPLICATION_JAVA_CLASS = "application/java-class";
 }

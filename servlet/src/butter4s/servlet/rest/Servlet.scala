@@ -35,35 +35,49 @@ import java.lang.reflect.InvocationTargetException
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
-
-class Request( impl: HttpServletRequest, path: String ) extends butter4s.servlet.Request( impl ) {
-	lazy val query = impl.getRequestURI.substring( impl.getServletPath.length + 1 + path.length + ( if ( path.endsWith( "/" ) ) 0 else 1 ) )
+object Request {
+	def pathParam( mapping: String, localPath: String, name: String ) =
+		"&([^=]*)".r.findAllIn( mapping ).indexOf( "&" + name ) match {
+			case -1 => None
+			case group => mapping.replaceAll( "&[^=]*=", "" ).r.findFirstMatchIn( localPath ).map( _.group( group + 1 ) )
+		}
 }
 
-class Error( val code: Int, val message: String ) extends RuntimeException( message )
+class Request( impl: HttpServletRequest ) extends butter4s.servlet.Request( impl ) {
+	lazy val fullPath = impl.getRequestURI.substring( impl.getServletPath.length + 1 )
+	lazy val methodName = if ( fullPath.contains( "/" ) ) fullPath.substring( 0, fullPath.indexOf( "/" ) ) else fullPath
+	lazy val localPath = impl.getRequestURI.substring( impl.getServletPath.length + 1 + methodName.length )
+
+	def apply( mapping: String, name: String ) = Request.pathParam( mapping, localPath, name )
+}
+
+class ImmediateResponse( val code: Int, val message: String ) extends RuntimeException( message )
 
 trait Servlet extends butter4s.servlet.Servlet with Logging {
 	override def post( request: butter4s.servlet.Request, response: butter4s.servlet.Response ) = get( request, response )
 
-	override def get( request: butter4s.servlet.Request, response: butter4s.servlet.Response ) = try {
-		val action = request.getRequestURI.substring( request.getServletPath.length + 1 )
-		val methodName = if ( action.contains( "/" ) ) action.substring( 0, action.indexOf( "/" ) ) else action
-		getClass.declaredMethod( methodName ) match {
-			case None => raise( SC_NOT_FOUND, methodName + " is not found" )
+	override def get( rq: butter4s.servlet.Request, response: butter4s.servlet.Response ) = try {
+		val request = new Request( rq )
+		log.debug( "invoke " + request.fullPath )
+		getClass.declaredMethod( request.methodName ) match {
+			case None => respond( SC_NOT_FOUND, request.methodName + " is not found" )
 			case Some( method ) => method.annotation[Method] match {
-				case None => raise( SC_NOT_FOUND, methodName + " is not exposed" )
+				case None => respond( SC_NOT_FOUND, request.methodName + " is not exposed" )
 				case Some( restMethod ) =>
 					val result = method.invoke( this, method.parameters.map( p => {
 						log.debug( p )
-						if ( p.clazz.isAssignableFrom( classOf[Request] ) ) new Request( request, if ( restMethod.path != Constants.DEFAULT ) restMethod.path else method.name )
+						if ( p.clazz.assignableFrom[Request] ) request
 						else p.annotation[Param] match {
-							case None => raise( SC_INTERNAL_SERVER_ERROR, "method parameter of type " + p.clazz + " is not annotated properly" )
-							case Some( restParam ) => request( restParam.name ) match {
-								case None => raise( SC_BAD_REQUEST, restParam.name + " is required" )
-								case Some( value ) => Convert.to( value, p.clazz ).asInstanceOf[AnyRef]
-							}
+							case None => respond( SC_INTERNAL_SERVER_ERROR, "method parameter of type " + p.clazz + " is not annotated properly" )
+							case Some( restParam ) => Convert.to( ( restParam.from match {
+								case Param.From.PARAM => request( restParam.name )
+								case Param.From.PATH => request( restMethod.path, restParam.name )
+							} ) match {
+								case None => respond( SC_BAD_REQUEST, restParam.name + " is required" )
+								case Some( value ) => value
+							}, restParam.typeHint, p.clazz ).asInstanceOf[AnyRef]
 						}
-					} ): _* )
+					} ): _ * )
 					restMethod.produces match {
 						case MimeType.APPLICATION_JSON =>
 							response.setContentType( restMethod.produces + "; charset=" + restMethod.charset )
@@ -79,11 +93,12 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 			}
 		}
 	} catch {
-		case e: Error => error( e, e ); response.sendError( e.code, e.message )
-		case e: InvocationTargetException if e.getTargetException.isInstanceOf[Error] => error( e, e ); response.sendError( e.getTargetException.asInstanceOf[Error].code, e.getTargetException.getMessage )
+		case e: ImmediateResponse => error( e, e );
+		response.sendError( e.code, e.message )
+		case e: InvocationTargetException if e.getTargetException.isInstanceOf[ImmediateResponse] => error( e, e );
+		response.sendError( e.getTargetException.asInstanceOf[ImmediateResponse].code, e.getTargetException.getMessage )
 		case e: InvocationTargetException => throw e.getTargetException
 	}
-
 
 	@Method( produces = "text/javascript" )
 	def api( request: Request ) = "var api_" + getServletConfig.getServletName + " = { \n\tsync: {\n" + getClass.declaredMethods.view.filter( m => m.annotatedWith[Method] && m.name != "api" ).map(
@@ -95,7 +110,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 					"\t\t\t\tparameters: {\n" +
 					params.map( p => "\t\t\t\t\t" + p.annotation[Param].get.name + ":" + p.annotation[Param].get.name ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tevalJSON:" + MimeType.isJson( m.annotation[Method].get.produces ) + ",\n" +
+					"\t\t\t\tevalJSON: " + MimeType.isJson( m.annotation[Method].get.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tasynchronous: false,\n" +
 					"\t\t\t\tonSuccess: function( response ) {\n" +
@@ -118,7 +133,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 					"\t\t\t\tparameters: {\n" +
 					params.map( p => "\t\t\t\t\t" + p.annotation[Param].get.name + ":" + p.annotation[Param].get.name ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tevalJSON:" + MimeType.isJson( m.annotation[Method].get.produces ) + ",\n" +
+					"\t\t\t\tevalJSON: " + MimeType.isJson( m.annotation[Method].get.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tonSuccess: function( response ) {\n" +
 					"\t\t\t\t\tif (succeed) succeed(" +
@@ -135,7 +150,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 		} ).mkString( ",\n\n" ) + "\n\t}\n}"
 
 
-	def raise( code: Int, reason: String ) = throw new Error( code, reason )
+	def respond( code: Int, reason: String ) = throw new ImmediateResponse( code, reason )
 }
 
 

@@ -36,4 +36,12 @@ import java.lang.annotation.Target;
 @Retention( RetentionPolicy.RUNTIME )
 public @interface Param {
 	String name();
+
+	String typeHint() default Constants.APPLICATION_JAVA_CLASS;
+
+	From from() default From.PARAM;
+
+	public enum From {
+		PARAM, PATH
+	}
 }

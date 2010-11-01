@@ -20,6 +20,7 @@ object MimeType {
 	val APPLICATION_JSON = "application/json"
 	val APPLICATION_JSON_WRAPPED_VALUE = "application/x-json-wrapped-value"
 	val TEXT_JAVASCRIPT = "text/javascript"
+	val APPLICATION_JAVA_CLASS = Constants.APPLICATION_JAVA_CLASS
 
 	val jsonTypes = Array( APPLICATION_JSON, APPLICATION_JSON_WRAPPED_VALUE )
 
