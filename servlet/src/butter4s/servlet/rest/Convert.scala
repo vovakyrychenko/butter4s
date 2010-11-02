@@ -49,7 +49,7 @@ object Convert {
 		classOf[java.lang.Boolean].getName -> {(s, _, _) => s.asInstanceOf[String].toBoolean},
 		classOf[String].getName -> {(s, _, _) => s.asInstanceOf[String]},
 		classOf[List[_]].getName -> {(xs, hint, xst) => xs.asInstanceOf[List[String]].map( to( _, hint, xst.asInstanceOf[ParameterizedType].getActualTypeArguments()( 0 ) ) )},
-		MimeType.APPLICATION_JSON -> {(s, _, t) => JSONBind.unmarshal( s.asInstanceOf[String], t )}
+		MimeType.APPLICATION_JSON -> {(s, _, t) => JSONBind.unmarshal( s.asInstanceOf[String], t ).get}
 		)
 
 	def to( value: AnyRef, hint: String, targetType: Type ) =
