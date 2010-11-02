@@ -54,15 +54,9 @@ object JSONBind {
 				.map( field => tab + "\"" + field.name + "\": " + marshalUnknown( tab + "\t", field.get( obj ) ) ).mkString( ",\n" ) +
 				"\n" + tab.substring( 1 ) + "}"
 
-	def unmarshal[A: Manifest]( input: String ): A = {
-		println(manifest[A].erasure + ": " + manifest[A].typeArguments)
-		unmarshal( input, manifest[A].erasure ).asInstanceOf[A]
-	}
+	def unmarshal[A: Manifest]( input: String ): Option[A] = unmarshal( input, manifest[A].asParameterizedType ).asInstanceOf[Option[A]]
 
-	def unmarshal( input: String, t: Class[_] ): Any = JSON.parse( input ) match {
-		case None => throw new UnmarshalException( "could not parse: " + input )
-		case Some( value ) => unmarshalUnknown( t, value )
-	}
+	def unmarshal( input: String, t: Type ): Option[Any] = JSON.parse( input ).map( unmarshalUnknown( t, _ ) )
 
 	private def unmarshalUnknown( t: Type, value: Any ) = value match {
 		case null => null
@@ -104,9 +98,7 @@ object JSONBind {
 
 	private var marshallers: Map[Class[_], Marshaller] = Map( classOf[List[_]] -> ListMarshaller )
 
-	def registerMarshaller( c: Class[_], m: Marshaller ) = synchronized {
-		marshallers += c -> m
-	}
+	def registerMarshaller( c: Class[_], m: Marshaller ) = marshallers += c -> m
 
 	trait Marshaller {
 		def marshal( tab: String, a: Any ): String

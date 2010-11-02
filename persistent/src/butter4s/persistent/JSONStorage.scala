@@ -17,7 +17,7 @@ trait JSONStorage[T <: AnyRef] {
 	def find( id: String )( implicit m: Manifest[T] ): Option[T] = find( "", id )
 
 	def find( path: String, id: String )( implicit m: Manifest[T] ): Option[T] =
-		findRaw( path, id ).map( JSONBind.unmarshal[T]( _ ) )
+		findRaw( path, id ).flatMap( JSONBind.unmarshal[T]( _ ) )
 
 	def findRaw( path: String, id: String ): Option[String] = synchronized {
 		val file = new File( location + "/" + path + "/" + id + ".json" )
@@ -26,7 +26,7 @@ trait JSONStorage[T <: AnyRef] {
 	}
 
 	def list( implicit m: Manifest[T] ): List[T] = synchronized {
-		new Directory( location ).filter( _.name.endsWith( ".json" ) ).map( f => JSONBind.unmarshal[T]( f.asInstanceOf[File].read ) )
+		new Directory( location ).filter( _.name.endsWith( ".json" ) ).map( f => JSONBind.unmarshal[T]( f.asInstanceOf[File].read ).get )
 	}
 
 	def listRaw: List[String] = synchronized {

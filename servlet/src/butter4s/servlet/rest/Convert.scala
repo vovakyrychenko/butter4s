@@ -25,7 +25,7 @@ package butter4s.servlet.rest
 
 import butter4s.bind.json.JSONBind
 import butter4s.reflect._
-import java.lang.reflect.ParameterizedType
+import java.lang.reflect.{ParameterizedType, Type}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
@@ -48,8 +48,8 @@ object Convert {
 		classOf[Boolean].getName -> {(s, _, _) => s.asInstanceOf[String].toBoolean},
 		classOf[java.lang.Boolean].getName -> {(s, _, _) => s.asInstanceOf[String].toBoolean},
 		classOf[String].getName -> {(s, _, _) => s.asInstanceOf[String]},
-		classOf[List[_]].getName -> {(xs, hint, xst) => xs.asInstanceOf[List[String]].map( to( _, hint, xst.impl.asInstanceOf[ParameterizedType].getActualTypeArguments()( 0 ) ) )},
-		MimeType.APPLICATION_JSON -> {(s, _, c) => JSONBind.unmarshal( s.asInstanceOf[String], c.toClass[AnyRef] )}
+		classOf[List[_]].getName -> {(xs, hint, xst) => xs.asInstanceOf[List[String]].map( to( _, hint, xst.asInstanceOf[ParameterizedType].getActualTypeArguments()( 0 ) ) )},
+		MimeType.APPLICATION_JSON -> {(s, _, t) => JSONBind.unmarshal( s.asInstanceOf[String], t )}
 		)
 
 	def to( value: AnyRef, hint: String, targetType: Type ) =

@@ -42,8 +42,8 @@ class JSONBindTestCase {
 	}
 
 	@Test def bindList = {
-//		yet it failed
-//		assertBind( List( true, false ) )
+		assertBind( List( true, false ) )
+		assertBind( List( BeanGB( BeanGeneric( List( 1, 2, 3 ) ) ), BeanGB( BeanGeneric( List( 4, 5, 6 ) ) ) ) )
 	}
 
 	@Test def bindBeanListList = assertBind( ListBean( List( List( 1, 2, 3 ), List( 4, 5, 6 ) ) ) )
@@ -60,8 +60,10 @@ class JSONBindTestCase {
 	def assertBind[A: Manifest]( source: A ) = {
 		println( "========================================" )
 		val json = JSONBind.marshal( source )
+		println( "JSON:" )
 		println( json )
 		val result = JSONBind.unmarshal[A]( json )
+		println( "Object:" )
 		println( result )
 		assert( source == result )
 	}
