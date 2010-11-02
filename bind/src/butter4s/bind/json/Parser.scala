@@ -6,17 +6,13 @@
 **                          |/                                          **
 \*                                                                      */
 
-// $Id: Parser.scala 20028 2009-12-07 11:49:19Z cunei $
-
-
 package butter4s.bind.json
 
 import scala.util.parsing.combinator._
 import scala.util.parsing.combinator.syntactical._
-import scala.util.parsing.combinator.lexical._
-
 /**
  * @author Derek Chen-Becker <"java"+@+"chen-becker"+"."+"org">
+ * @author Vladimir Kiricheko <vladimir.kirichenko@gmail.com>
  */
 class Parser extends StdTokenParsers with ImplicitConversions {
 	// Fill in abstract defs
