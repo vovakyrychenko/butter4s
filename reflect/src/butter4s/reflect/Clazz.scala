@@ -96,7 +96,7 @@ class Method( val impl: JMethod ) extends AnnotationTarget {
 	override def toString = impl.toGenericString
 }
 
-class Parameter( val genericType: Type, val annotations: Array[java.lang.annotation.Annotation] ) extends AnnotatedElement with AnnotationTarget {
+class Parameter( val genericType: java.lang.reflect.Type, val annotations: Array[java.lang.annotation.Annotation] ) extends AnnotatedElement with AnnotationTarget {
 	override val impl = this
 
 	def getDeclaredAnnotations = annotations
