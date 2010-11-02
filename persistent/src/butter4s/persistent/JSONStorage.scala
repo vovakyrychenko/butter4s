@@ -14,13 +14,10 @@ import butter4s.lang._
 trait JSONStorage[T <: AnyRef] {
 	val location: String
 
-	def find( id: String )( implicit m: Manifest[T] ): Option[T] = find( "", id )
+	def find( id: String )( implicit m: Manifest[T] ): Option[T] = findRaw( id ).flatMap( JSONBind.unmarshal[T]( _ ) )
 
-	def find( path: String, id: String )( implicit m: Manifest[T] ): Option[T] =
-		findRaw( path, id ).flatMap( JSONBind.unmarshal[T]( _ ) )
-
-	def findRaw( path: String, id: String ): Option[String] = synchronized {
-		val file = new File( location + "/" + path + "/" + id + ".json" )
+	def findRaw( id: String ): Option[String] = synchronized {
+		val file = new File( location + "/" + id + ".json" )
 		if ( file.exists ) Some( file.read )
 		else None
 	}
@@ -33,9 +30,13 @@ trait JSONStorage[T <: AnyRef] {
 		new Directory( location ).filter( _.name.endsWith( ".json" ) ).map( _.asInstanceOf[File].read[String] )
 	}
 
-	def store( path: String, obj: T ) = synchronized {
+	def store( obj: T ) = synchronized {
 		val id = obj.getClass.annotatedField[Key].get.get( obj )
-		new File( location + "/" + path + "/" + id + ".json" ).write( JSONBind.marshal( obj ) )
+		new File( location + "/" + id + ".json" ).write( JSONBind.marshal( obj ) )
+	}
+
+	def isolated( path: String ) = new JSONStorage[T] {
+		val location = JSONStorage.this.location + "/" + path
 	}
 }
 
