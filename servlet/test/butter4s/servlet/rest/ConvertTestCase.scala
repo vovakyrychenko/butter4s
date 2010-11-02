@@ -17,15 +17,13 @@ import javax.xml.bind.annotation.XmlAttribute
 import annotation.target.field
 import org.junit.{Assert, Test}
 import butter4s.bind.json.JSONBind
+import butter4s.reflect._
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 class ConvertTestCase {
-	@Test def convertJSON = {
-		val test = Bean( "test" )
-		Assert.assertEquals( test, Convert.to( JSONBind.marshal( test ), MimeType.APPLICATION_JSON, classOf[Bean] ) )
-	}
+	@Test def convertJSON = Assert.assertEquals( Bean( "test" ), Convert.to( JSONBind.marshal( Bean( "test" ) ), MimeType.APPLICATION_JSON, classOf[Bean] ) )
 }
 
 case class Bean( @( XmlAttribute@field ) var name: String ) {

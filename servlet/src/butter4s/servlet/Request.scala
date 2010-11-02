@@ -31,8 +31,8 @@ import butter4s.reflect._
 class Request( private[servlet] val impl: javax.servlet.http.HttpServletRequest ) {
 	lazy val session = new Session( impl.getSession )
 
-	def apply[A: Manifest]( name: String ) =
-		if ( manifest[A].erasure.assignableFrom[String] ) Option( impl.getParameter( name ) )
-		else if ( manifest[A].erasure.assignableFrom[List[String]] ) Option( impl.getParameterValues( name ).toList )
-		else throw new ClassCastException( "request could provide only String or List[String] of parameters" )
+	def apply[A: Manifest]( name: String ): Option[A] =
+		if ( manifest[A].erasure.assignableFrom[String] ) Option( impl.getParameter( name ).asInstanceOf[A] )
+		else if ( manifest[A].erasure.assignableFrom[List[String]] ) Option( impl.getParameterValues( name ).toList.asInstanceOf[A] )
+		else throw new ClassCastException( "request could provide value of type String or List[String]" )
 }

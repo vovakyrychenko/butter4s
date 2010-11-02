@@ -30,7 +30,7 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import HttpServletResponse._
 import butter4s.bind.json.JSONBind
 import butter4s.logging.Logging
-import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.{ParameterizedType, InvocationTargetException}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
@@ -68,10 +68,13 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 					val result = method.invoke( this, method.parameters.map( p => {
 						log.debug( p )
 						if ( p.genericType.assignableFrom[Request] ) request
-						else p.annotation[Param] match {
+						else if ( p.genericType.assignableFrom[List[_]] ) p.annotation[Param] match {
+							case None => respond( SC_INTERNAL_SERVER_ERROR, "method parameter of type " + p.genericType + " is not annotated properly" )
+							case Some( restParam ) => request[List[String]]( restParam.name ).get.map( Convert.to( _, restParam.typeHint, p.genericType.asInstanceOf[ParameterizedType].getActualTypeArguments()( 0 ) ) )
+						} else p.annotation[Param] match {
 							case None => respond( SC_INTERNAL_SERVER_ERROR, "method parameter of type " + p.genericType + " is not annotated properly" )
 							case Some( restParam ) => Convert.to( ( restParam.from match {
-								case Param.From.PARAM => if (p.genericType.assignableFrom[List[_]]) request[List[String]]( restParam.name ) else request[String](restParam.name)
+								case Param.From.PARAM => request[String]( restParam.name )
 								case Param.From.PATH => request( restMethod.path, restParam.name )
 							} ) match {
 								case None => respond( SC_BAD_REQUEST, restParam.name + " is required" )
