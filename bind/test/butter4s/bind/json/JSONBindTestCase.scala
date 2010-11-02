@@ -62,7 +62,7 @@ class JSONBindTestCase {
 		val json = JSONBind.marshal( source )
 		println( "JSON:" )
 		println( json )
-		val result = JSONBind.unmarshal[A]( json )
+		val result = JSONBind.unmarshal[A]( json ).get
 		println( "Object:" )
 		println( result )
 		assert( source == result )
