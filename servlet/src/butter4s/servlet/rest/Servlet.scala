@@ -59,7 +59,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 
 	override def get( rq: butter4s.servlet.Request, response: butter4s.servlet.Response ) = try {
 		val request = new Request( rq )
-		log.debug( "invoke " + request.getQueryString )
+		log.debug( "invoke " + request.getRequestURI )
 		getClass.declaredMethod( request.methodName ) match {
 			case None => respond( SC_NOT_FOUND, request.methodName + " is not found" )
 			case Some( method ) => method.annotation[Method] match {
