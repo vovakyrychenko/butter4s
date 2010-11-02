@@ -59,7 +59,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 
 	override def get( rq: butter4s.servlet.Request, response: butter4s.servlet.Response ) = try {
 		val request = new Request( rq )
-		log.debug( "invoke " + request.fullPath )
+		log.debug( "invoke " + request.getQueryString )
 		getClass.declaredMethod( request.methodName ) match {
 			case None => respond( SC_NOT_FOUND, request.methodName + " is not found" )
 			case Some( method ) => method.annotation[Method] match {
@@ -71,7 +71,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 						else p.annotation[Param] match {
 							case None => respond( SC_INTERNAL_SERVER_ERROR, "method parameter of type " + p.genericType + " is not annotated properly" )
 							case Some( restParam ) => Convert.to( ( restParam.from match {
-								case Param.From.PARAM => request( restParam.name )
+								case Param.From.PARAM => if (p.genericType.assignableFrom[List[_]]) request[List[String]]( restParam.name ) else request[String](restParam.name)
 								case Param.From.PATH => request( restMethod.path, restParam.name )
 							} ) match {
 								case None => respond( SC_BAD_REQUEST, restParam.name + " is required" )
@@ -111,9 +111,9 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 					"\t\t\t\tparameters: {\n" +
 					params.map( p => {
 						val restParam = p.annotation[Param].get
-						"\t\t\t\t\t" + restParam.name + ":" + wrapIf( p.genericType.assignableFrom[List[_]] )( "[",
-							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ),
-							"]" )
+						"\t\t\t\t\t" + restParam.name + ":" + ( if ( p.genericType.assignableFrom[List[_]] ) restParam.name + ".collect(function(x){return " +
+								wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", "x", ")" ) + ";})" else
+							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( m.annotation[Method].get.produces ) + ",\n" +
@@ -139,9 +139,9 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 					"\t\t\t\tparameters: {\n" +
 					params.map( p => {
 						val restParam = p.annotation[Param].get
-						"\t\t\t\t\t" + restParam.name + ":" + wrapIf( p.genericType.assignableFrom[List[_]] )( "[",
-							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ),
-							"]" )
+						"\t\t\t\t\t" + restParam.name + ":" + ( if ( p.genericType.assignableFrom[List[_]] ) restParam.name + ".collect(function(x){return " +
+								wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", "x", ")" ) + ";})" else
+							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( m.annotation[Method].get.produces ) + ",\n" +
