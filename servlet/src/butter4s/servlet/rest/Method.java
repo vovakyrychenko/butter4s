@@ -42,4 +42,10 @@ public @interface Method {
 	String path() default Constants.DEFAULT;
 
 	boolean raw() default false;
+
+	Http http() default Http.POST;
+
+	public enum Http {
+		GET, POST
+	}
 }

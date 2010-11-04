@@ -122,6 +122,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
+					"\t\t\t\tmethod: '" + restMethod.http + "',\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tasynchronous: false,\n" +
@@ -153,6 +154,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
+					"\t\t\t\tmethod: '" + restMethod.http + "',\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tonSuccess: function( response ) {\n" +
@@ -163,7 +165,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 					else if ( restMethod.produces == Constants.NONE ) "response.status" else "response.responseText" ) + ");\n" +
 					"\t\t\t\t},\n" +
 					"\t\t\t\tonFailure: function( response ) { \n" +
-					"\t\t\t\t\tif (failed) failed(response.statusText);\n" +
+					"\t\t\t\t\tif (failed) failed(response.statusText); else alert(response.statusText);\n" +
 					"\t\t\t\t}\n" +
 					"\t\t\t});\n" +
 					"\t\t}"
