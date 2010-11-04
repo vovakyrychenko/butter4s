@@ -38,9 +38,9 @@ import java.lang.reflect.{ParameterizedType, InvocationTargetException}
 
 object Request {
 	def pathParam( mapping: String, localPath: String, name: String ) =
-		"&([^=]*)".r.findAllIn( mapping ).indexOf( "&" + name ) match {
+		"\\{([^\\}]*)\\}".r.findAllIn( mapping ).indexOf( "{" + name + "}" ) match {
 			case -1 => None
-			case group => mapping.replaceAll( "&[^=]*=", "" ).r.findFirstMatchIn( localPath ).map( _.group( group + 1 ) )
+			case group => mapping.replaceAll( "\\{([^\\}]*)\\}", "([^/]*)" ).r.findFirstMatchIn( localPath ).map( _.group( group + 1 ) )
 		}
 }
 
@@ -74,7 +74,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 						} else p.annotation[Param] match {
 							case None => respond( SC_INTERNAL_SERVER_ERROR, "method parameter of type " + p.genericType + " is not annotated properly" )
 							case Some( restParam ) => Convert.to( ( restParam.from match {
-								case Param.From.PARAM => request[String]( restParam.name )
+								case Param.From.QUERY => request[String]( restParam.name )
 								case Param.From.PATH => request( restMethod.path, restParam.name )
 							} ) match {
 								case None => respond( SC_BAD_REQUEST, restParam.name + " is required" )
@@ -106,27 +106,30 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 
 	@Method( produces = "text/javascript" )
 	def api( request: Request ) = "var api_" + getServletConfig.getServletName + " = { \n\tsync: {\n" + getClass.declaredMethods.view.filter( m => m.annotatedWith[Method] && m.name != "api" ).map(
-		m => {
-			val params = m.parameters.view.filter( _.annotatedWith[Param] )
-			"\t\t" + m.name + ": function (" + params.map( _.annotation[Param].get.name ).mkString( "," ) + ") {\n" +
+		method => {
+			val params = method.parameters.view.filter( _.annotatedWith[Param] )
+			val (queryParams, pathParams) = params.partition( _.annotation[Param].get.from == Param.From.QUERY )
+			val restMethod = method.annotation[Method].get
+			"\t\t" + method.name + ": function (" + params.map( _.annotation[Param].get.name ).mkString( "," ) + ") {\n" +
 					"\t\t\tvar result, error;\n" +
-					"\t\t\tnew Ajax.Request( '" + request.getRequestURI.substring( 0, request.getServletPath.length + 1 ) + m.name + "', {\n" +
+					"\t\t\tnew Ajax.Request( '" + request.getRequestURI.substring( 0, request.getServletPath.length + 1 ) + method.name +
+					( if ( !pathParams.isEmpty ) restMethod.path.replaceAll( "\\{", "'+" ).replaceAll( "\\}", "+'" ) else "" ) + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
-					params.map( p => {
+					queryParams.map( p => {
 						val restParam = p.annotation[Param].get
 						"\t\t\t\t\t" + restParam.name + ":" + ( if ( p.genericType.assignableFrom[List[_]] ) restParam.name + ".collect(function(x){return " +
 								wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", "x", ")" ) + ";})" else
 							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tevalJSON: " + MimeType.isJson( m.annotation[Method].get.produces ) + ",\n" +
+					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tasynchronous: false,\n" +
 					"\t\t\t\tonSuccess: function( response ) {\n" +
-					( if ( MimeType.isJson( m.annotation[Method].get.produces ) )
-						if ( m.annotation[Method].get.produces == MimeType.APPLICATION_JSON_WRAPPED_VALUE ) "\t\t\t\t\tresult = response.responseJSON.value;\n"
+					( if ( MimeType.isJson( restMethod.produces ) )
+						if ( restMethod.produces == MimeType.APPLICATION_JSON_WRAPPED_VALUE ) "\t\t\t\t\tresult = response.responseJSON.value;\n"
 						else "\t\t\t\t\tresult = response.responseJSON;\n"
-					else if ( m.annotation[Method].get.produces == Constants.NONE ) "\t\t\t\t\tresult = response.status;\n" else "\t\t\t\t\tresult = response.responseText;\n" ) +
+					else if ( restMethod.produces == Constants.NONE ) "\t\t\t\t\tresult = response.status;\n" else "\t\t\t\t\tresult = response.responseText;\n" ) +
 					"\t\t\t\t},\n" +
 					"\t\t\t\tonFailure: function( response ) { \n" +
 					"\t\t\t\t\terror = response.statusText;\n" +
@@ -135,26 +138,29 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 					"\t\t\tif (error) throw error; else return result;\n" +
 					"\t\t}"
 		} ).mkString( ",\n\n" ) + "\n\t},\n\tasync: {\n" + getClass.declaredMethods.view.filter( m => m.annotatedWith[Method] && m.name != "api" ).map(
-		m => {
-			val params = m.parameters.view.filter( _.annotatedWith[Param] )
-			"\t\t" + m.name + ": function (" + ( params.map( _.annotation[Param].get.name ) :+ "succeed" :+ "failed" ).mkString( "," ) + ") {\n" +
-					"\t\t\tnew Ajax.Request( '" + request.getRequestURI.substring( 0, request.getServletPath.length + 1 ) + m.name + "', {\n" +
+		method => {
+			val params = method.parameters.view.filter( _.annotatedWith[Param] )
+			val (queryParams, pathParams) = params.partition( _.annotation[Param].get.from == Param.From.QUERY )
+			val restMethod = method.annotation[Method].get
+			"\t\t" + method.name + ": function (" + ( params.map( _.annotation[Param].get.name ) :+ "succeed" :+ "failed" ).mkString( "," ) + ") {\n" +
+					"\t\t\tnew Ajax.Request( '" + request.getRequestURI.substring( 0, request.getServletPath.length + 1 ) + method.name +
+					( if ( !pathParams.isEmpty ) restMethod.path.replaceAll( "\\{", "'+" ).replaceAll( "\\}", "+'" ) else "" ) + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
-					params.map( p => {
+					queryParams.map( p => {
 						val restParam = p.annotation[Param].get
 						"\t\t\t\t\t" + restParam.name + ":" + ( if ( p.genericType.assignableFrom[List[_]] ) restParam.name + ".collect(function(x){return " +
 								wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", "x", ")" ) + ";})" else
 							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tevalJSON: " + MimeType.isJson( m.annotation[Method].get.produces ) + ",\n" +
+					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tonSuccess: function( response ) {\n" +
 					"\t\t\t\t\tif (succeed) succeed(" +
-					( if ( MimeType.isJson( m.annotation[Method].get.produces ) )
-						if ( m.annotation[Method].get.produces == MimeType.APPLICATION_JSON_WRAPPED_VALUE ) "response.responseJSON.value"
+					( if ( MimeType.isJson( restMethod.produces ) )
+						if ( restMethod.produces == MimeType.APPLICATION_JSON_WRAPPED_VALUE ) "response.responseJSON.value"
 						else "response.responseJSON"
-					else if ( m.annotation[Method].get.produces == Constants.NONE ) "response.status" else "response.responseText" ) + ");\n" +
+					else if ( restMethod.produces == Constants.NONE ) "response.status" else "response.responseText" ) + ");\n" +
 					"\t\t\t\t},\n" +
 					"\t\t\t\tonFailure: function( response ) { \n" +
 					"\t\t\t\t\tif (failed) failed(response.statusText);\n" +

@@ -39,9 +39,9 @@ public @interface Param {
 
 	String typeHint() default Constants.APPLICATION_JAVA_CLASS;
 
-	From from() default From.PARAM;
+	From from() default From.QUERY;
 
 	public enum From {
-		PARAM, PATH
+		QUERY, PATH
 	}
 }
