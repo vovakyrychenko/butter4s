@@ -25,6 +25,7 @@
 package butter4s.logging
 
 import org.apache.commons.logging.{Log, LogFactory}
+import compat.Platform
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
@@ -56,6 +57,13 @@ trait Logging {
 	def fatal( any: => Any ) = if ( impl.isFatalEnabled ) impl.fatal( any )
 
 	def fatal( any: => Any, error: => Throwable ) = if ( impl.isFatalEnabled ) impl.fatal( any, error )
+
+	def time[A]( message: String, f: => A ): A = {
+		val start = Platform.currentTime
+		val result = f
+		debug( message + " took " + ( Platform.currentTime - start ) + " ms" )
+		result
+	}
 
 	val log = this;
 } 
