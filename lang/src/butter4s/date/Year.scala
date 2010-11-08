@@ -40,7 +40,7 @@ case class Year( year: Int ) extends SeqLike[Month, Seq[Month]] {
 case class Month( year: Year, number: Int ) extends SeqLike[Day, Seq[Day]] {
 	private[date] val calendar = year.calendar.clone.asInstanceOf[Calendar];
 	calendar.set( MONTH, number )
-	lazy val name = calendar.getDisplayName( MONTH, LONG, Locale.getDefault )
+	lazy val name:String = calendar.getDisplayName( MONTH, LONG, Locale.getDefault )
 	private lazy val days = for ( d <- calendar.getActualMinimum( DATE ) to calendar.getActualMaximum( DATE ) ) yield Day( this, d )
 
 
@@ -72,10 +72,11 @@ case class Day( month: Month, number: Int ) {
 }
 
 sealed trait DayOfWeek
-case class Monday extends DayOfWeek
-case class Tuesday extends DayOfWeek
-case class Wednesday extends DayOfWeek
-case class Thursday extends DayOfWeek
-case class Friday extends DayOfWeek
-case class Saturday extends DayOfWeek
-case class Sunday extends DayOfWeek
+case object Monday extends DayOfWeek
+case object Tuesday extends DayOfWeek
+case object Wednesday extends DayOfWeek
+case object Thursday extends DayOfWeek
+case object Friday extends DayOfWeek
+case object Saturday extends DayOfWeek
+case object Sunday extends DayOfWeek
+
