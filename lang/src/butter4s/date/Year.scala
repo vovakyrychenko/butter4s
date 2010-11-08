@@ -32,7 +32,7 @@ case class Year( year: Int ) extends SeqLike[Month, Seq[Month]] {
 
 	def apply( idx: Int ) = monthes( idx )
 
-	def newBuilder: Builder[Month, Seq[Month]] = new ListBuffer[Month]
+	def newBuilder = Seq.newBuilder
 
 	override def toString() = "Year(" + year + ")"
 }
@@ -50,7 +50,7 @@ case class Month( year: Year, number: Int ) extends SeqLike[Day, Seq[Day]] {
 
 	def apply( idx: Int ) = days( idx )
 
-	def newBuilder: Builder[Day, Seq[Day]] = new ListBuffer[Day]
+	def newBuilder = Seq.newBuilder
 
 	override def toString = name
 }
