@@ -65,7 +65,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 			case Some( method ) => method.annotation[Method] match {
 				case None => respond( SC_NOT_FOUND, request.methodName + " is not exposed" )
 				case Some( restMethod ) =>
-					val result = log.time( "service " + request.methodName, method.invoke( this, method.parameters.map( p => {
+					val result = log.time( "service " + request.getRequestURI, method.invoke( this, method.parameters.map( p => {
 						log.debug( p )
 						if ( p.genericType.assignableFrom[Request] ) request
 						else if ( p.genericType.assignableFrom[List[_]] ) p.annotation[Param] match {
