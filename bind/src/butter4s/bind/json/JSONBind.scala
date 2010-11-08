@@ -28,7 +28,6 @@ import butter4s.reflect._
 import javax.xml.bind.annotation.{XmlElement, XmlAttribute}
 import javax.xml.bind.UnmarshalException
 import java.lang.reflect.{TypeVariable, ParameterizedType, Type}
-
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */

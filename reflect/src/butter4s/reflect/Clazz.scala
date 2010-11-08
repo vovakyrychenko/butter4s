@@ -51,22 +51,40 @@ class Type( val impl: JType ) {
 	override def toString = impl.toString
 }
 
-class Clazz[A]( val impl: Class[_] ) extends AnnotationTarget {
-	lazy val declaredFields: List[Field] = {
+private class Cache[A, B]( load: ( A => B ) ) {
+	var map = Map[A, B]()
+
+	def apply( a: A ) = map.get( a ) match {
+		case Some( b ) => b
+		case None => val b = load( a ); map += a -> b; b
+	}
+}
+
+object Clazz {
+	private val fields = new Cache( (c: Class[_]) => {
 		@tailrec def find( fields: List[Field], clazz: Class[_] ): List[Field] =
 			if ( clazz == null ) fields else find( fields ::: clazz.getDeclaredFields.map( new Field( _ ) ).toList, clazz.getSuperclass )
 
-		find( List[Field](), impl )
-	}
+		find( List[Field](), c )
+	} )
 
-	def declaredField( name: String ) = declaredFields.find( _.name == name )
+	def declaredFields( c: Class[_] ) = fields( c )
 
-	lazy val declaredMethods: List[Method] = {
+	private val methods = new Cache( (c: Class[_]) => {
 		@tailrec def find( methods: List[Method], clazz: Class[_] ): List[Method] =
 			if ( clazz == null ) methods else find( methods ::: clazz.getDeclaredMethods.map( new Method( _ ) ).toList, clazz.getSuperclass )
 
-		find( List[Method](), impl )
-	}
+		find( List[Method](), c )
+	} )
+
+	def declaredMethods( c: Class[_] ) = methods( c )
+}
+class Clazz[A]( val impl: Class[_] ) extends AnnotationTarget {
+	def declaredFields = Clazz.declaredFields( impl )
+
+	def declaredField( name: String ) = declaredFields.find( _.name == name )
+
+	def declaredMethods = Clazz.declaredMethods( impl )
 
 	def declaredMethod( name: String ) = declaredMethods.find( _.name == name )
 
@@ -91,7 +109,6 @@ class Method( val impl: JMethod ) extends AnnotationTarget {
 	lazy val name = impl.getName
 
 	lazy val parameters = impl.getGenericParameterTypes.zip( impl.getParameterAnnotations ).map {case (t, a) => new Parameter( t, a )}
-
 
 	override def toString = impl.toGenericString
 }

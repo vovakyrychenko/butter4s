@@ -32,36 +32,36 @@ import compat.Platform
  */
 
 trait Logging {
-	private val impl: Log = LogFactory.getLog( this.getClass )
+	private val logImpl: Log = LogFactory.getLog( this.getClass )
 
-	def trace( any: => Any ) = if ( impl.isTraceEnabled ) impl.trace( any )
+	def trace( any: => Any ) = if ( logImpl.isTraceEnabled ) logImpl.trace( any )
 
-	def trace( any: => Any, error: => Throwable ) = if ( impl.isTraceEnabled ) impl.trace( any, error )
+	def trace( any: => Any, error: => Throwable ) = if ( logImpl.isTraceEnabled ) logImpl.trace( any, error )
 
-	def debug( any: => Any ) = if ( impl.isDebugEnabled ) impl.debug( any )
+	def debug( any: => Any ) = if ( logImpl.isDebugEnabled ) logImpl.debug( any )
 
-	def debug( any: => Any, error: => Throwable ) = if ( impl.isDebugEnabled ) impl.debug( any, error )
+	def debug( any: => Any, error: => Throwable ) = if ( logImpl.isDebugEnabled ) logImpl.debug( any, error )
 
-	def info( any: => Any ) = if ( impl.isInfoEnabled ) impl.info( any )
+	def info( any: => Any ) = if ( logImpl.isInfoEnabled ) logImpl.info( any )
 
-	def info( any: => Any, error: => Throwable ) = if ( impl.isInfoEnabled ) impl.info( any, error )
+	def info( any: => Any, error: => Throwable ) = if ( logImpl.isInfoEnabled ) logImpl.info( any, error )
 
-	def warn( any: => Any ) = if ( impl.isWarnEnabled ) impl.warn( any )
+	def warn( any: => Any ) = if ( logImpl.isWarnEnabled ) logImpl.warn( any )
 
-	def warn( any: => Any, error: => Throwable ) = if ( impl.isWarnEnabled ) impl.warn( any, error )
+	def warn( any: => Any, error: => Throwable ) = if ( logImpl.isWarnEnabled ) logImpl.warn( any, error )
 
-	def error( any: => Any ) = if ( impl.isErrorEnabled ) impl.error( any )
+	def error( any: => Any ) = if ( logImpl.isErrorEnabled ) logImpl.error( any )
 
-	def error( any: => Any, error: => Throwable ) = if ( impl.isErrorEnabled ) impl.error( any, error )
+	def error( any: => Any, error: => Throwable ) = if ( logImpl.isErrorEnabled ) logImpl.error( any, error )
 
-	def fatal( any: => Any ) = if ( impl.isFatalEnabled ) impl.fatal( any )
+	def fatal( any: => Any ) = if ( logImpl.isFatalEnabled ) logImpl.fatal( any )
 
-	def fatal( any: => Any, error: => Throwable ) = if ( impl.isFatalEnabled ) impl.fatal( any, error )
+	def fatal( any: => Any, error: => Throwable ) = if ( logImpl.isFatalEnabled ) logImpl.fatal( any, error )
 
 	def time[A]( message: String, f: => A ): A = {
 		val start = Platform.currentTime
 		val result = f
-		debug( message + " took " + ( Platform.currentTime - start ) + " ms" )
+		debug( message + " took " + ( Platform.currentTime - start ) + " ms..." )
 		result
 	}
 
