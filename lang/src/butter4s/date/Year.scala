@@ -13,15 +13,12 @@
 
 package butter4s.date
 
-import collection.SeqLike
-import collection.mutable.{ListBuffer, Builder}
 import java.util.{GregorianCalendar, Locale, Calendar}
 import java.util.Calendar._
-
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-case class Year( year: Int ) extends SeqLike[Month, Seq[Month]] {
+case class Year( year: Int ) extends Seq[Month] {
 	private[date] val calendar = new GregorianCalendar
 	calendar.set( YEAR, year )
 	private lazy val monthes = for ( m <- calendar.getActualMinimum( MONTH ) to calendar.getActualMaximum( MONTH ) ) yield Month( this, m )
@@ -32,12 +29,10 @@ case class Year( year: Int ) extends SeqLike[Month, Seq[Month]] {
 
 	def apply( idx: Int ) = monthes( idx )
 
-	def newBuilder = Seq.newBuilder
-
 	override def toString() = "Year(" + year + ")"
 }
 
-case class Month( year: Year, number: Int ) extends SeqLike[Day, Seq[Day]] {
+case class Month( year: Year, number: Int ) extends Seq[Day] {
 	private[date] val calendar = year.calendar.clone.asInstanceOf[Calendar];
 	calendar.set( MONTH, number )
 	lazy val name:String = calendar.getDisplayName( MONTH, LONG, Locale.getDefault )
@@ -49,8 +44,6 @@ case class Month( year: Year, number: Int ) extends SeqLike[Day, Seq[Day]] {
 	def length = days.length
 
 	def apply( idx: Int ) = days( idx )
-
-	def newBuilder = Seq.newBuilder
 
 	override def toString = name
 }
