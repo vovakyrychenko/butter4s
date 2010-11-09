@@ -21,21 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package butter4s.servlet.rest
+package butter4s
 
-import javax.xml.bind.annotation.XmlAttribute
-import annotation.target.field
-import org.junit.{Assert, Test}
-import butter4s.bind.json.JsonBind
-import butter4s.reflect._
+import compat.Platform
 
 /**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
+ * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
-class ConvertTestCase {
-	@Test def convertJSON = Assert.assertEquals( Bean( "test" ), Convert.to( JsonBind.marshal( Bean( "test" ) ), MimeType.APPLICATION_JSON, classOf[Bean] ) )
-}
 
-case class Bean( @( XmlAttribute@field ) var name: String ) {
-	def this() = this ( null )
+package object benchmark {
+	def benchmark( name: String, times: Int, code: => Unit ) =
+		println( "benchmarking " + name + ": " + times + " times, mean time " + ( 0 to times ).map( attempt => {
+			val start = Platform.currentTime
+			code
+			Platform.currentTime - start
+		} ).sum / times + " ms" )
 }

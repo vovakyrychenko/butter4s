@@ -28,7 +28,7 @@ import butter4s.reflect._
 import butter4s.lang._
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import HttpServletResponse._
-import butter4s.bind.json.JSONBind
+import butter4s.bind.json.JsonBind
 import butter4s.logging.Logging
 import java.lang.reflect.{ParameterizedType, InvocationTargetException}
 
@@ -86,7 +86,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 					restMethod.produces match {
 						case MimeType.APPLICATION_JSON =>
 							response.setContentType( restMethod.produces + "; charset=" + restMethod.charset )
-							response.send( _.println( if ( restMethod.raw ) result else JSONBind.marshal( result ) ) )
+							response.send( _.println( if ( restMethod.raw ) result else JsonBind.marshal( result ) ) )
 						case MimeType.APPLICATION_JSON_WRAPPED_VALUE =>
 							response.setContentType( "application/json; charset=" + restMethod.charset )
 							response.send( _.println( """{"value":""" + ( if ( result.isInstanceOf[String] ) "\"" + result + "\"" else result ) + "}" ) )

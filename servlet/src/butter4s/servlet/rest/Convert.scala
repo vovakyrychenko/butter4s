@@ -23,7 +23,7 @@
  */
 package butter4s.servlet.rest
 
-import butter4s.bind.json.JSONBind
+import butter4s.bind.json.JsonBind
 import butter4s.reflect._
 import java.lang.reflect.Type
 
@@ -48,7 +48,7 @@ object Convert {
 		classOf[Boolean].getName -> {(s, _, _) => s.toBoolean},
 		classOf[java.lang.Boolean].getName -> {(s, _, _) => s.toBoolean},
 		classOf[String].getName -> {(s, _, _) => s},
-		MimeType.APPLICATION_JSON -> {(s, _, t) => JSONBind.unmarshal( s, t ).get}
+		MimeType.APPLICATION_JSON -> {(s, _, t) => JsonBind.unmarshal( s, t ).get}
 		)
 
 	def to( value: String, hint: String, targetType: Type ) = ( if ( hint == MimeType.APPLICATION_JAVA_CLASS ) converters( targetType.toClass[AnyRef].getName )

@@ -23,18 +23,21 @@
  */
 package butter4s.bind.json
 
-
 import butter4s.reflect._
 import javax.xml.bind.annotation.{XmlElement, XmlAttribute}
 import javax.xml.bind.UnmarshalException
 import java.lang.reflect.{TypeVariable, ParameterizedType, Type}
+import butter4s.bind.json.JsonAST._
+import butter4s.bind.json.JsonParser.ParseException
+
 /**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
+ * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
-object JSONBind {
+
+object JsonBind {
 	def marshal( value: Any ): String = marshalUnknown( "\t", value )
 
-	private def marshalUnknown( tab: String, value: Any ) = value match {
+	private def marshalUnknown( tab: String, value: Any ): String = value match {
 		case null => "null"
 		case v: String => "\"" + quote( v ) + "\""
 		case v: Int => v.toString
@@ -44,7 +47,7 @@ object JSONBind {
 		case v: Byte => v.toString
 		case v: Short => v.toString
 		case v: Boolean => v.toString
-		case v: AnyRef if marshallers.exists {case (c, _) => c.isAssignableFrom( v.getClass )} => marshallers.find {case (c, _) => c.isAssignableFrom( v.getClass )}.get._2.marshal( tab, v )
+		case v: List[_] => "[\n" + v.map( e => tab + marshalUnknown( tab + "\t", e ) ).mkString( ",\n" ) + "\n" + tab.substring( 1 ) + "]"
 		case v: AnyRef => marshalObject( tab, v )
 	}
 
@@ -55,16 +58,29 @@ object JSONBind {
 
 	def unmarshal[A: Manifest]( input: String ): Option[A] = unmarshal( input, manifest[A].asParameterizedType ).asInstanceOf[Option[A]]
 
-	def unmarshal( input: String, t: Type ): Option[Any] = JSON.parse( input ).map( unmarshalUnknown( t, _ ) )
+	def unmarshal( input: String, t: Type ): Option[Any] =
+		if ( input.startsWith( "\"" ) && input.endsWith( "\"" ) ) Some( input )
+		else if ( "null".equals( input.trim ) ) Some( null )
+		else try Some( unmarshalNumber( t, input.toDouble ) ) catch {
+			case e: NumberFormatException =>
+				try Some( input.toBoolean ) catch {
+					case e: NumberFormatException =>
+						try Some( unmarshalUnknown( t, JsonParser.parse( input ) ) ) catch {case e: ParseException => None}
+				}
+		}
 
-	private def unmarshalUnknown( t: Type, value: Any ) = value match {
-		case null => null
-		case v: String => v
-		case v: Boolean => v
-		case v: Double => unmarshalNumber( t, v )
-		case v: AnyRef if marshallers.exists {case (c, _) => c.isAssignableFrom( t.toClass[AnyRef] )} => marshallers.find {case (c, _) => c.isAssignableFrom( t.toClass[AnyRef] )}.get._2.unmarshal( v, t.asInstanceOf[ParameterizedType] )
-		case v: Map[String, Any] => unmarshalObject( t, v )
+	private def unmarshalUnknown( t: Type, value: JValue ): Any = value match {
+		case JNull => null
+		case JString( v ) => v
+		case JBool( v ) => v
+		case JDouble( v ) => unmarshalNumber( t, v )
+		case JInt( v ) => unmarshalNumber( t, v.toDouble )
+		case JArray( v ) => unmarshalList( t.asInstanceOf[ParameterizedType], v )
+		case JObject( v ) => unmarshalObject( t, v )
+		case _ => throw new UnmarshalException( "should not happen" )
 	}
+
+	private def unmarshalList( t: ParameterizedType, list: List[JValue] ) = list.map( unmarshalUnknown( t.getActualTypeArguments()( 0 ), _ ) )
 
 	private def unmarshalNumber( t: Type, v: Double ): AnyVal =
 		if ( t.assignableFrom[Int] ) v.toInt
@@ -78,10 +94,10 @@ object JSONBind {
 		else if ( t.assignableFrom[Float] ) v.toFloat
 		else if ( t.assignableFrom[java.lang.Float] ) v.toFloat else v
 
-	private def unmarshalObject( t: Type, map: Map[String, Any] ): AnyRef = {
+	private def unmarshalObject( t: Type, fields: List[JField] ): AnyRef = {
 		val clazz = t.toClass[AnyRef]
 		val obj = clazz.newInstance
-		for ( (name, value) <- map ) clazz.declaredField( name ) match {
+		for ( JField( name, value ) <- fields ) clazz.declaredField( name ) match {
 			case None => throw new UnmarshalException( "field " + name + " is not declared in " + clazz )
 			case Some( field ) => field.set( obj, unmarshalUnknown( if ( field.getGenericType.isInstanceOf[TypeVariable[_]] ) field.getGenericType.resolveWith( t.asInstanceOf[ParameterizedType] ) else field.getGenericType, value ) )
 		}
@@ -94,23 +110,5 @@ object JSONBind {
 		case Some( r ) => seed + r
 		case None => seed + c
 	} )
-
-	private var marshallers: Map[Class[_], Marshaller] = Map( classOf[List[_]] -> ListMarshaller )
-
-	def registerMarshaller( c: Class[_], m: Marshaller ) = marshallers += c -> m
-
-	trait Marshaller {
-		def marshal( tab: String, a: Any ): String
-
-		def unmarshal( s: Any, t: ParameterizedType ): Any
-	}
-
-	object ListMarshaller extends Marshaller {
-		def unmarshal( value: Any, pt: ParameterizedType ) = value.asInstanceOf[List[_]].map( unmarshalUnknown( pt.getActualTypeArguments()( 0 ), _ ) )
-
-		def marshal( tab: String, a: Any ) = "[\n" + a.asInstanceOf[List[_]].map(
-			e => tab + marshalUnknown( tab + "\t", e ) ).mkString( ",\n" ) + "\n" + tab.substring( 1 ) + "]"
-	}
 }
-
 

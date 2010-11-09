@@ -31,7 +31,7 @@ import butter4s.logging.Logging
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-class JSONBindTestCase extends Logging {
+class JsonBindTestCase extends Logging {
 	@Test def bind = assertBind( Bean( "x", 10, Bean2( "y", 15, List( 1, 2, 3 ) ) ) )
 
 	@Test def bindPrimitives = {
@@ -60,10 +60,10 @@ class JSONBindTestCase extends Logging {
 
 	def assertBind[A: Manifest]( source: A ) = {
 		println( "========================================" )
-		val json = log.time( "marshal", JSONBind.marshal( source ) )
+		val json = log.time( "marshal", JsonBind.marshal( source ) )
 		println( "JSON:" )
 		println( json )
-		val result = log.time( "unmarshal", JSONBind.unmarshal[A]( json ).get )
+		val result = log.time( "unmarshal", JsonBind.unmarshal[A]( json ).get )
 		println( "Object:" )
 		println( result )
 		assert( source == result )
