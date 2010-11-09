@@ -25,7 +25,7 @@
 module.name = butter4s-benchmark
 module.title = butter4s-benchmark
 module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
-module.libraries =
+#module.libraries =
 module.sources = benchmark/src
 module.use.scala = true
 #use.java = true
