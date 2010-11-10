@@ -31,8 +31,10 @@ trait JSONStorage[T <: AnyRef] {
 	}
 
 	def store( obj: T ) = synchronized {
-		val id = obj.getClass.annotatedField[Key].get.get( obj )
-		new File( location + "/" + id + ".json" ).write( JsonBind.marshal( obj ) )
+		obj.getClass.annotatedField[Key] match {
+			case Some( f ) => new File( location + "/" + f.get( obj ) + ".json" ).write( JsonBind.marshal( obj ) )
+			case None => throw new StorageException( obj.getClass + " has no field annotated with @Key" )
+		}
 	}
 
 	def isolated( path: String ) = new JSONStorage[T] {
@@ -40,3 +42,5 @@ trait JSONStorage[T <: AnyRef] {
 	}
 }
 
+
+class StorageException( msg: String ) extends RuntimeException( msg ) 
