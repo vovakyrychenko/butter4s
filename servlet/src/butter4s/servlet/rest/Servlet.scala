@@ -57,7 +57,7 @@ class ImmediateResponse( val code: Int, val message: String ) extends RuntimeExc
 trait Servlet extends butter4s.servlet.Servlet with Logging {
 	override def post( request: butter4s.servlet.Request, response: butter4s.servlet.Response ) = get( request, response )
 
-	override def get( rq: butter4s.servlet.Request, response: butter4s.servlet.Response ) = try {
+	override def get( rq: butter4s.servlet.Request, response: butter4s.servlet.Response ) = log.time( rq.getRequestURI, try {
 		val request = new Request( rq )
 		log.debug( "invoke " + request.getRequestURI )
 		getClass.declaredMethod( request.methodName ) match {
@@ -65,7 +65,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 			case Some( method ) => method.annotation[Method] match {
 				case None => respond( SC_NOT_FOUND, request.methodName + " is not exposed" )
 				case Some( restMethod ) =>
-					val result = log.time( "service " + request.getRequestURI, method.invoke( this, method.parameters.map( p => {
+					val result = method.invoke( this, method.parameters.map( p => {
 						log.debug( p )
 						if ( p.genericType.assignableFrom[Request] ) request
 						else if ( p.genericType.assignableFrom[List[_]] ) p.annotation[Param] match {
@@ -81,7 +81,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 								case Some( value ) => value
 							}, restParam.typeHint, p.genericType ).asInstanceOf[AnyRef]
 						}
-					} ): _ * ) )
+					} ): _ * )
 
 					restMethod.produces match {
 						case MimeType.APPLICATION_JSON =>
@@ -103,7 +103,7 @@ trait Servlet extends butter4s.servlet.Servlet with Logging {
 		case e: InvocationTargetException if e.getTargetException.isInstanceOf[ImmediateResponse] => error( e.getTargetException, e.getTargetException );
 		response.sendError( e.getTargetException.asInstanceOf[ImmediateResponse].code, e.getTargetException.getMessage )
 		case e: InvocationTargetException => throw e.getTargetException
-	}
+	} )
 
 	@Method( produces = "text/javascript" )
 	def api( request: Request ) = "var api_" + getServletConfig.getServletName + " = { \n\tsync: {\n" + getClass.declaredMethods.view.filter( m => m.annotatedWith[Method] && m.name != "api" ).map(
