@@ -24,7 +24,6 @@
 package butter4s.security
 
 import org.junit.Test
-import com.adstream.io.digest.Digest
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
