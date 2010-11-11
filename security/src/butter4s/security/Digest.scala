@@ -21,7 +21,7 @@ import java.io.{ByteArrayInputStream, InputStream}
 import butter4s.lang._
 
 object Digest {
-	private[this] var digests = Map[Symbol, () => MessageDigestSpi]()
+	private var digests = Map[Symbol, () => MessageDigestSpi]()
 
 	register( 'MD5, () => new MD5 )
 	register( 'MD2, () => new MD2 )
