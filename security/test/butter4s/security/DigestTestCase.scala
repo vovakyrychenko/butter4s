@@ -21,34 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package butter4s
+package butter4s.security
 
-import lang.Predicate.cast
-import lang.Predicate.P
+import org.junit.Test
+import com.adstream.io.digest.Digest
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
-package object lang {
-	implicit def identity[A]( a: A ) = a
-
-	implicit def bytes2string( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
-
-	implicit def string2bytes( s: String ) = s.getBytes( "UTF-8" )
-
-	implicit def function2predicate[A]( f: A => Boolean ): P[A] = cast( f )
-
-	def not[A]( f: A => Boolean ) = f.not
-
-	def wrapIf( cond: Boolean )( left: => String, value: Any, right: => String ) = if ( cond ) left + value + right else "" + value
-
-	private final val chars = Array( '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' );
-
-	class RichByteArray( a: Array[Byte] ) {
-		def toHexString = a.foldLeft( "" )( (r, b) => r + chars( ( b & 0xF0 ) >> 4 ) + chars( b & 0x0F ) )
-	}
-
-	implicit def byteArray2Rich( a: Array[Byte] ) = new RichByteArray( a )
-
+class DigestTestCase {
+	@Test def digest = assert( "c4ca4238a0b923820dcc509a6f75849b" == Digest.digest( 'MD5, "1" ) )
 }

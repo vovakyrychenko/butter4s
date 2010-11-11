@@ -23,8 +23,6 @@
  */
 package butter4s
 
-import compat.Platform
-
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
@@ -32,8 +30,8 @@ import compat.Platform
 package object benchmark {
 	def benchmark( name: String, times: Int, code: => Unit ) =
 		println( "benchmarking " + name + ": " + times + " times, mean time " + ( 0 to times ).map( attempt => {
-			val start = Platform.currentTime
+			val start = System.nanoTime
 			code
-			Platform.currentTime - start
-		} ).sum / times + " ms" )
+			System.nanoTime - start
+		} ).sum / times / 100 + " mcs" )
 }
