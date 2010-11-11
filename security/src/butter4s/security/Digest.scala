@@ -11,7 +11,7 @@
  ************************************************************************
  */
 
-package com.adstream.io.digest
+package butter4s.security
 
 import sun.security.provider._
 import sun.security.krb5.internal.crypto.crc32
