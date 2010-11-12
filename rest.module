@@ -22,17 +22,11 @@
 #  THE SOFTWARE.
 #
 
-vcs.tag.prefix = b4s
-vcs.git = true
-vcs.git.remote = origin
-vcs.git.branch = master
-#build.resources
-build.libraries = lib/*.jar, servlet/lib/*.jar, logging/lib/*.jar
-build.sources = benchmark/src:lang/src:lang/test:security/src:security/test:io/src:reflect/src:reflect/test:bind/src:bind/test:servlet/src:servlet/test:persistent/src:logging/src:rest/src
-build.use.scala = yes
-build.use.java = yes
-modules = lang,benchmark,reflect,security,io,logging,bind,servlet,persistent,rest
-releases =
-javadocs =
-war-releases =
- 
+module.name = butter4s-rest
+module.title = butter4s-test
+module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+module.libraries = servlet/lib/*.jar, dist/*.jar
+module.sources = rest/src
+module.use.scala = true
+#use.java = true
+#module.scala.home = ${scala.2.8.home}
