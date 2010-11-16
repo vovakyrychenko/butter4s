@@ -22,7 +22,7 @@
  *  THE SOFTWARE.
  */
 
-package butter4s.rest;
+package butter4s.net.http.rest;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

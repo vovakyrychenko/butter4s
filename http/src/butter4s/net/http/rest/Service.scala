@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package butter4s.rest
+package butter4s.net.http.rest
 
 import butter4s.reflect._
 import butter4s.lang._

@@ -22,26 +22,13 @@
  *  THE SOFTWARE.
  */
 
-package butter4s.rest;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package butter4s.net.http.rest;
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
-@Target( ElementType.PARAMETER )
-@Retention( RetentionPolicy.RUNTIME )
-public @interface Param {
-	String name();
-
-	String typeHint() default Constants.APPLICATION_JAVA_CLASS;
-
-	From from() default From.QUERY;
-
-	public enum From {
-		QUERY, PATH
-	}
+interface Constants {
+	String DEFAULT = "DEFAULT";
+	String NONE = DEFAULT;
+	String APPLICATION_JAVA_CLASS = "application/java-class";
 }

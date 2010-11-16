@@ -11,10 +11,10 @@
  ************************************************************************
  */
 
-package butter4s.rest.servlet
+package butter4s.net.http.rest.servlet
 
 import java.io.PrintWriter
-import butter4s.rest.{Session, Response, Request, Service}
+import butter4s.net.http.rest.{Session, Response, Request, Service}
 import javax.servlet.http.{HttpSession, HttpServletResponse, HttpServletRequest, HttpServlet}
 
 /**

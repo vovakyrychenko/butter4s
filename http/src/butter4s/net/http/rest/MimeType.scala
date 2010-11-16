@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package butter4s.rest
+package butter4s.net.http.rest
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
