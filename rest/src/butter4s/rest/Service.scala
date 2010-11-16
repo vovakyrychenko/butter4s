@@ -44,6 +44,10 @@ object Request {
 
 trait Session {
 	def apply[A]( name: String ): Option[A]
+
+	def update( name: String, value: Any ): Unit
+
+	def invalidate: Unit
 }
 
 trait Request extends {
@@ -176,7 +180,7 @@ trait Service extends Logging {
 			val restMethod = method.annotation[Method].get
 			"\t\t" + method.name + ": function (" + params.map( _.annotation[Param].get.name ).mkString( "," ) + ") {\n" +
 					"\t\t\tvar result, error;\n" +
-					"\t\t\tnew Ajax.Request( '" + request.serviceLocation + "/" + method.name +
+					"\t\t\tnew Ajax.Request( '" + request.serviceLocation + method.name +
 					( if ( !pathParams.isEmpty ) restMethod.path.replaceAll( "\\{", "'+" ).replaceAll( "\\}", "+'" ) else "" ) + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
 					queryParams.map( p => {
@@ -208,7 +212,7 @@ trait Service extends Logging {
 			val (queryParams, pathParams) = params.partition( _.annotation[Param].get.from == Param.From.QUERY )
 			val restMethod = method.annotation[Method].get
 			"\t\t" + method.name + ": function (" + ( params.map( _.annotation[Param].get.name ) :+ "succeed" :+ "failed" ).mkString( "," ) + ") {\n" +
-					"\t\t\tnew Ajax.Request( '" + request.serviceLocation + "/" + method.name +
+					"\t\t\tnew Ajax.Request( '" + request.serviceLocation + method.name +
 					( if ( !pathParams.isEmpty ) restMethod.path.replaceAll( "\\{", "'+" ).replaceAll( "\\}", "+'" ) else "" ) + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
 					queryParams.map( p => {

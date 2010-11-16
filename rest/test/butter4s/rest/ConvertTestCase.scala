@@ -21,18 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package butter4s.servlet.rest
+package butter4s.rest
 
+import javax.xml.bind.annotation.XmlAttribute
+import annotation.target.field
 import org.junit.{Assert, Test}
+import butter4s.bind.json.JsonBind
+import butter4s.reflect._
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-class RequestTestCase {
-	@Test def pathParam = {
-		val mapping = """/{year}/{month}/{date}"""
-		Assert.assertEquals( "2009", Request.pathParam( mapping, "/2009/April/12", "year" ).get );
-		Assert.assertEquals( "April", Request.pathParam( mapping, "/2009/April/12", "month" ).get );
-		Assert.assertEquals( "12", Request.pathParam( mapping, "/2009/April/12", "date" ).get );
-	}
+class ConvertTestCase {
+	@Test def convertJSON = Assert.assertEquals( Bean( "test" ), Convert.to( JsonBind.marshal( Bean( "test" ) ), MimeType.APPLICATION_JSON, classOf[Bean] ) )
+}
+
+case class Bean( @( XmlAttribute@field ) var name: String ) {
+	def this() = this ( null )
 }

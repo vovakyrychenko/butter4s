@@ -42,6 +42,10 @@ class ServletRequestAdapter( req: HttpServletRequest ) extends Request {
 
 class ServletSessionAdapter( s: HttpSession ) extends Session {
 	def apply[A]( name: String ) = Option( s.getAttribute( name ).asInstanceOf[A] )
+
+	def update( name: String, value: Any ) = s.setAttribute( name, value )
+
+	def invalidate = s.invalidate
 }
 
 class ServletResponseAdapter( resp: HttpServletResponse ) extends Response {
