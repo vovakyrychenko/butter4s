@@ -25,8 +25,8 @@
 module.name = butter4s-rest
 module.title = butter4s-test
 module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
-module.libraries = servlet/lib/*.jar, dist/*.jar
+module.libraries = servlet/lib/*.jar, logging/lib/*.jar, dist/*.jar
 module.sources = rest/src
 module.use.scala = true
-#use.java = true
+module.use.java = true
 #module.scala.home = ${scala.2.8.home}
