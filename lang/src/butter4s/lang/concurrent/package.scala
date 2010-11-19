@@ -23,11 +23,10 @@
  */
 package butter4s.lang
 
-/**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
- */
-object Function {
-	abstract class F[-A, +B] extends Function1[A, B]
-	abstract class F2[-A, -B, +C] extends Function2[A, B, C]
-	abstract class F0[+A] extends Function0[A]
+package object concurrent {
+	def async( f: => Unit ) = {
+		new Thread() {
+			override def run = f
+		}.start
+	}
 }

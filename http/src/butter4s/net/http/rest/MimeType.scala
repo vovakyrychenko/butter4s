@@ -28,11 +28,10 @@ package butter4s.net.http.rest
  */
 object MimeType {
 	final val APPLICATION_JSON = "application/json"
-	final val APPLICATION_JSON_WRAPPED_VALUE = "application/x-json-wrapped-value"
 	final val TEXT_JAVASCRIPT = "text/javascript"
 	final val APPLICATION_JAVA_CLASS = Constants.APPLICATION_JAVA_CLASS
 
-	final val jsonTypes = Array( APPLICATION_JSON, APPLICATION_JSON_WRAPPED_VALUE )
+	final val jsonTypes = Array( APPLICATION_JSON )
 
 	def isJson( mt: String ) = jsonTypes.contains( mt )
 }

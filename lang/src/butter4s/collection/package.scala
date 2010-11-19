@@ -21,23 +21,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package butter4s.lang;
 
-import org.junit.Assert;
-import org.junit.Test;
+package butter4s
+
+import collection.mutable.MultiArrayMap
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
-public class FunctionTestCase {
-	@Test
-	public void testF() {
-		Function.F<String, String> f = new Function.F<String, String>() {
-			public String apply( String s ) {
-				return s;
-			}
-		};
-		String r = f.apply( "aaa" );
-		Assert.assertEquals( "aaa", r );
+package object collection {
+	class RichTraversableOnce[A]( t: TraversableOnce[A] ) {
+		import scala.collection.mutable
+		def toMultiArrayMap[K, V]( implicit ev: A <:< (K, V) ): MultiArrayMap[K, V] = {
+			val r = new mutable.HashMap[K, mutable.ArrayBuffer[V]] with MultiArrayMap[K, V]
+			for ( a <- t ) r.addBinding( a )
+			r
+		}
 	}
+
+	implicit def toRichTraversableOnce[A]( t: TraversableOnce[A] ) = new RichTraversableOnce( t )
+
+	class RichArray[A]( ar: Array[A] ) {
+		import scala.collection.mutable
+		def toMultiArrayMap[K, V]( implicit ev: A <:< (K, V) ): MultiArrayMap[K, V] = {
+			val r = new mutable.HashMap[K, mutable.ArrayBuffer[V]] with MultiArrayMap[K, V]
+			for ( a <- ar ) r.addBinding( a )
+			r
+		}
+	}
+
+	implicit def toRichArray[A]( t: Array[A] ) = new RichArray( t )
 }

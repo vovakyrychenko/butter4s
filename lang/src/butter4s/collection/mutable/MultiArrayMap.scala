@@ -21,22 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package butter4s.net.http.rest.embedded
 
-import butter4s.net.http.rest
-import butter4s.net.http.rest.Param.From._
+package butter4s.collection.mutable
 
+import scala.collection.mutable
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-object ServerTest extends Application {
-	val server = new Server( 9000 )
-	server.add( "math", MathService )
-	server.run
-}
 
-object MathService extends rest.Service {
-	@rest.Method( produces = rest.MimeType.APPLICATION_JSON )
-	def sum( @rest.Param( name = "a" ) a: Int, @rest.Param( name = "b" ) b: Int, @rest.Param( name = "c", from = BODY ) c: Int ) = a + b + c
+trait MultiArrayMap[K, V] extends mutable.Map[K, mutable.ArrayBuffer[V]] {
+	def addBinding( t: (K, V) ): MultiArrayMap.this.type = addBinding( t._1, t._2 )
+
+	def addBinding( k: K, v: V ): MultiArrayMap.this.type = {
+		get( k ) match {
+			case None => this( k ) = mutable.ArrayBuffer( v )
+			case Some( list ) => list += v
+		}
+		this
+	}
 }

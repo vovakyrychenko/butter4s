@@ -23,7 +23,7 @@ abstract class FsNode( _path: String ) {
 
 
 class File( path: String ) extends FsNode( path ) {
-	def read[R]( implicit toResult: Array[Byte] => R ) = using( new FileInputStream( path ) ) {readAs[R]( _ )}
+	def read[R]( implicit toResult: Array[Byte] => R ) = using( new FileInputStream( path ) ) {_.readAs[R]}
 
 	def write[P]( content: P )( implicit fromParam: P => Array[Byte] ) = {
 		parent.create
@@ -35,7 +35,7 @@ class File( path: String ) extends FsNode( path ) {
 	lazy val parent = new Directory( impl.getParent )
 }
 
-class Directory( path: String ) extends FsNode( path ) with TraversableLike[FsNode,List[FsNode]] with Immutable {
+class Directory( path: String ) extends FsNode( path ) with TraversableLike[FsNode, List[FsNode]] with Immutable {
 	private def items = impl.listFiles.view.map( file =>
 		if ( file.isDirectory ) new Directory( file.getPath )
 		else new File( file.getPath ) )
@@ -43,6 +43,6 @@ class Directory( path: String ) extends FsNode( path ) with TraversableLike[FsNo
 	def create = impl.mkdirs
 
 	def foreach[U]( f: ( FsNode ) => U ) = items.foreach( f )
-	
+
 	protected[this] def newBuilder: Builder[FsNode, List[FsNode]] = new ListBuffer[FsNode]
 }

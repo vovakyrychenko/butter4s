@@ -26,10 +26,11 @@ package butter4s.net.http.rest
 
 import butter4s.reflect._
 import butter4s.lang._
+import butter4s.io._
 import butter4s.bind.json.JsonBind
 import butter4s.logging.Logging
 import java.lang.reflect.{ParameterizedType, InvocationTargetException}
-import java.io.PrintWriter
+import java.io.{InputStream, Writer}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
@@ -50,13 +51,19 @@ trait Session {
 	def invalidate: Unit
 }
 
-trait Request extends {
-	def servicePath: String
+trait Context {
+	val serviceName: String
 
-	def serviceLocation: String
+	val serviceLocation: String
+}
 
-	lazy val methodName = if ( servicePath.contains( "/" ) ) servicePath.substring( 0, servicePath.indexOf( "/" ) ) else servicePath
-	lazy val methodPath = servicePath.substring( methodName.length )
+trait Request {
+	val requestLine: String
+
+	val context: Context
+
+	lazy val methodName = if ( requestLine.contains( "/" ) ) requestLine.substring( 0, requestLine.indexOf( "/" ) ) else requestLine
+	lazy val methodPath = requestLine.substring( methodName.length )
 
 	def parameter( mapping: String, name: String ) = Request.pathParam( mapping, methodPath, name )
 
@@ -64,9 +71,11 @@ trait Request extends {
 
 	def parameters( name: String ): List[String]
 
+	val body: InputStream
+
 	val session: Session
 
-	override def toString = servicePath
+	override def toString = requestLine
 }
 
 object Response {
@@ -116,7 +125,7 @@ object Response {
 }
 
 trait Response {
-	def content( contentType: String, what: ( => PrintWriter ) => Unit ): Unit
+	def content( contentType: String, what: ( => Writer ) => Unit ): Unit
 
 	def status( code: Int, message: String = null ): Unit
 }
@@ -125,8 +134,6 @@ class ImmediateResponse( val code: Int, val message: String ) extends RuntimeExc
 
 trait Service extends Logging {
 	import Response.Code._
-
-	def serviceName: String
 
 	def perform( request: Request, response: Response ) = log.time( request.toString, try {
 		log.debug( "invoke " + request )
@@ -144,6 +151,7 @@ trait Service extends Logging {
 						} else p.annotation[Param] match {
 							case None => respond( INTERNAL_SERVER_ERROR, "method parameter of type " + p.genericType + " is not annotated properly" )
 							case Some( restParam ) => Convert.to( ( restParam.from match {
+								case Param.From.BODY => Some( request.body.readAs[String] )
 								case Param.From.QUERY => request.parameter( restParam.name )
 								case Param.From.PATH => request.parameter( restMethod.path, restParam.name )
 							} ) match {
@@ -155,11 +163,9 @@ trait Service extends Logging {
 
 					restMethod.produces match {
 						case MimeType.APPLICATION_JSON =>
-							response.content( restMethod.produces + "; charset=" + restMethod.charset, _.println( if ( restMethod.raw ) result else JsonBind.marshal( result ) ) )
-						case MimeType.APPLICATION_JSON_WRAPPED_VALUE =>
-							response.content( "application/json; charset=" + restMethod.charset, _.println( """{"value":""" + ( if ( result.isInstanceOf[String] ) "\"" + result + "\"" else result ) + "}" ) )
+							response.content( restMethod.produces + "; charset=" + restMethod.charset, _.write( if ( restMethod.raw ) result.toString else JsonBind.marshal( result ) ) )
 						case MimeType.TEXT_JAVASCRIPT =>
-							response.content( restMethod.produces + "; charset=" + restMethod.charset, _.println( result ) )
+							response.content( restMethod.produces + "; charset=" + restMethod.charset, _.write( result.toString ) )
 						case _ => response.status( if ( result == null ) OK else result.asInstanceOf[Int] )
 					}
 			}
@@ -173,14 +179,14 @@ trait Service extends Logging {
 	} )
 
 	@Method( produces = "text/javascript" )
-	def api( request: Request ) = "var api_" + serviceName + " = { \n\tsync: {\n" + getClass.declaredMethods.view.filter( m => m.annotatedWith[Method] && m.name != "api" ).map(
+	def api( request: Request ) = "var api_" + request.context.serviceName + " = { \n\tsync: {\n" + getClass.declaredMethods.view.filter( m => m.annotatedWith[Method] && m.name != "api" ).map(
 		method => {
 			val params = method.parameters.view.filter( _.annotatedWith[Param] )
 			val (queryParams, pathParams) = params.partition( _.annotation[Param].get.from == Param.From.QUERY )
 			val restMethod = method.annotation[Method].get
 			"\t\t" + method.name + ": function (" + params.map( _.annotation[Param].get.name ).mkString( "," ) + ") {\n" +
 					"\t\t\tvar result, error;\n" +
-					"\t\t\tnew Ajax.Request( '" + request.serviceLocation + method.name +
+					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation + "/" + method.name +
 					( if ( !pathParams.isEmpty ) restMethod.path.replaceAll( "\\{", "'+" ).replaceAll( "\\}", "+'" ) else "" ) + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
 					queryParams.map( p => {
@@ -195,9 +201,7 @@ trait Service extends Logging {
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tasynchronous: false,\n" +
 					"\t\t\t\tonSuccess: function( response ) {\n" +
-					( if ( MimeType.isJson( restMethod.produces ) )
-						if ( restMethod.produces == MimeType.APPLICATION_JSON_WRAPPED_VALUE ) "\t\t\t\t\tresult = response.responseJSON.value;\n"
-						else "\t\t\t\t\tresult = response.responseJSON;\n"
+					( if ( MimeType.isJson( restMethod.produces ) ) "\t\t\t\t\tresult = response.responseJSON;\n"
 					else if ( restMethod.produces == Constants.NONE ) "\t\t\t\t\tresult = response.status;\n" else "\t\t\t\t\tresult = response.responseText;\n" ) +
 					"\t\t\t\t},\n" +
 					"\t\t\t\tonFailure: function( response ) { \n" +
@@ -212,7 +216,7 @@ trait Service extends Logging {
 			val (queryParams, pathParams) = params.partition( _.annotation[Param].get.from == Param.From.QUERY )
 			val restMethod = method.annotation[Method].get
 			"\t\t" + method.name + ": function (" + ( params.map( _.annotation[Param].get.name ) :+ "succeed" :+ "failed" ).mkString( "," ) + ") {\n" +
-					"\t\t\tnew Ajax.Request( '" + request.serviceLocation + method.name +
+					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation + "/" + method.name +
 					( if ( !pathParams.isEmpty ) restMethod.path.replaceAll( "\\{", "'+" ).replaceAll( "\\}", "+'" ) else "" ) + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
 					queryParams.map( p => {
@@ -227,9 +231,7 @@ trait Service extends Logging {
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tonSuccess: function( response ) {\n" +
 					"\t\t\t\t\tif (succeed) succeed(" +
-					( if ( MimeType.isJson( restMethod.produces ) )
-						if ( restMethod.produces == MimeType.APPLICATION_JSON_WRAPPED_VALUE ) "response.responseJSON.value"
-						else "response.responseJSON"
+					( if ( MimeType.isJson( restMethod.produces ) ) "response.responseJSON"
 					else if ( restMethod.produces == Constants.NONE ) "response.status" else "response.responseText" ) + ");\n" +
 					"\t\t\t\t},\n" +
 					"\t\t\t\tonFailure: function( response ) { \n" +

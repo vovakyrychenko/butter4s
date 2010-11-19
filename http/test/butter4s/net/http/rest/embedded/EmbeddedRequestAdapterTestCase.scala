@@ -21,22 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package butter4s.net.http.rest.embedded
 
-import butter4s.net.http.rest
-import butter4s.net.http.rest.Param.From._
-
+import org.junit.{Assert, Test}
+import Assert._
+import collection.mutable.ArrayBuffer
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-object ServerTest extends Application {
-	val server = new Server( 9000 )
-	server.add( "math", MathService )
-	server.run
-}
-
-object MathService extends rest.Service {
-	@rest.Method( produces = rest.MimeType.APPLICATION_JSON )
-	def sum( @rest.Param( name = "a" ) a: Int, @rest.Param( name = "b" ) b: Int, @rest.Param( name = "c", from = BODY ) c: Int ) = a + b + c
+class EmbeddedRequestAdapterTestCase {
+	@Test def parseParams = {
+		assertEquals( Map( "a" -> ArrayBuffer( "1" ), "b" -> ArrayBuffer( "2 2" ) ), EmbeddedRequestAdapter.parseParams( "a=1&b=2+2" ) )
+		assertEquals( Map( "a" -> ArrayBuffer( "" ), "b" -> ArrayBuffer( "2" ) ), EmbeddedRequestAdapter.parseParams( "a=&b=2" ) )
+		assertEquals( Map( "a" -> ArrayBuffer( "1" ), "b" -> ArrayBuffer( "2" ) ), EmbeddedRequestAdapter.parseParams( "a=1&b=2&" ) )
+		assertEquals( Map( "a" -> ArrayBuffer( "1" ), "b" -> ArrayBuffer( "2", "3", "2" ) ), EmbeddedRequestAdapter.parseParams( "a=1&b=2&b=3&b=2" ) )
+	}
 }

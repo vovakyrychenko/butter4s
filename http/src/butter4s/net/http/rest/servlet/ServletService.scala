@@ -13,34 +13,41 @@
 
 package butter4s.net.http.rest.servlet
 
-import java.io.PrintWriter
-import butter4s.net.http.rest.{Session, Response, Request, Service}
+import butter4s.net.http.rest
 import javax.servlet.http.{HttpSession, HttpServletResponse, HttpServletRequest, HttpServlet}
+import java.io.Writer
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-class ServletService extends HttpServlet with Service {
+class ServletService extends HttpServlet with rest.Service {
 	override def doPost( req: HttpServletRequest, resp: HttpServletResponse ) = doGet( req, resp )
 
-	override def doGet( req: HttpServletRequest, resp: HttpServletResponse ) = perform( new ServletRequestAdapter( req ), new ServletResponseAdapter( resp ) )
+	override def doGet( req: HttpServletRequest, resp: HttpServletResponse ) = perform( new ServletRequestAdapter( req, this ), new ServletResponseAdapter( resp ) )
 
-	def serviceName = getServletConfig.getServletName
 }
 
-class ServletRequestAdapter( req: HttpServletRequest ) extends Request {
+class ServletRequestAdapter( req: HttpServletRequest, servlet: HttpServlet ) extends rest.Request {
 	def parameters( name: String ) = req.getParameterValues( name ).toList
 
 	def parameter( name: String ) = Option( req.getParameter( name ) )
 
-	def servicePath = req.getRequestURI.substring( req.getServletPath.length + 1 )
+	lazy val requestLine = req.getRequestURI.substring( req.getServletPath.length + 1 )
 
-	def serviceLocation = req.getRequestURI.substring( 0, req.getServletPath.length + 1 )
+	lazy val context = new ServletContextAdapter( req, servlet )
 
 	lazy val session = new ServletSessionAdapter( req.getSession )
+
+	lazy val body = req.getInputStream
 }
 
-class ServletSessionAdapter( s: HttpSession ) extends Session {
+class ServletContextAdapter( req: HttpServletRequest, servlet: HttpServlet ) extends rest.Context {
+	lazy val serviceLocation = req.getRequestURI.substring( 0, req.getServletPath.length + 1 )
+
+	lazy val serviceName = servlet.getServletConfig.getServletName
+}
+
+class ServletSessionAdapter( s: HttpSession ) extends rest.Session {
 	def apply[A]( name: String ) = Option( s.getAttribute( name ).asInstanceOf[A] )
 
 	def update( name: String, value: Any ) = s.setAttribute( name, value )
@@ -48,10 +55,10 @@ class ServletSessionAdapter( s: HttpSession ) extends Session {
 	def invalidate = s.invalidate
 }
 
-class ServletResponseAdapter( resp: HttpServletResponse ) extends Response {
+class ServletResponseAdapter( resp: HttpServletResponse ) extends rest.Response {
 	def status( code: Int, message: String = null ) = if ( code < 400 ) resp.setStatus( code ) else resp.sendError( code, message )
 
-	def content( contentType: String, what: ( => PrintWriter ) => Unit ) = {
+	def content( contentType: String, what: ( => Writer ) => Unit ) = {
 		resp.setContentType( contentType )
 		what( resp.getWriter )
 	}

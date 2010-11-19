@@ -24,13 +24,11 @@
 
 package butter4s.lang
 
-import butter4s.lang.Function.F
-
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 object Predicate {
-	abstract class P[A] extends F[A, Boolean] {
+	abstract class P[A] extends ( A => Boolean ) {
 		override def toString() = "<predicate>"
 
 		def and( f: ( _ >: A ) => Boolean ): P[A] = this && f
@@ -57,7 +55,7 @@ object Predicate {
 
 		override def &&( f: ( _ >: A ) => Boolean ): P[A] = {ps = f :: ps; this}
 
-		override def toString() = ps.tail.foldLeft( ps.head.toString )( _ + " AND " + _ )
+		override def toString() = "(" + ps.tail.foldLeft( ps.head.toString )( _ + " AND " + _ ) + ")"
 	}
 
 	private class Or[A]( f1: A => Boolean, f2: A => Boolean ) extends P[A] {
@@ -67,7 +65,7 @@ object Predicate {
 
 		override def &&( f: ( _ >: A ) => Boolean ): P[A] = {ps = f :: ps; this}
 
-		override def toString() = ps.tail.foldLeft( ps.head.toString )( _ + " OR " + _ )
+		override def toString() = "(" + ps.tail.foldLeft( ps.head.toString )( _ + " OR " + _ ) + ")"
 	}
 
 	def cast[A]( f: A => Boolean ) = new P[A] {

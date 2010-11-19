@@ -43,7 +43,7 @@ package object lang {
 
 	def wrapIf( cond: Boolean )( left: => String, value: Any, right: => String ) = if ( cond ) left + value + right else "" + value
 
-	private final val chars = Array( '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' );
+	private val chars = Array( '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' );
 
 	class RichByteArray( a: Array[Byte] ) {
 		def toHexString = a.foldLeft( "" )( (r, b) => r + chars( ( b & 0xF0 ) >> 4 ) + chars( b & 0x0F ) )
@@ -51,4 +51,21 @@ package object lang {
 
 	implicit def byteArray2Rich( a: Array[Byte] ) = new RichByteArray( a )
 
+	class RichTuple2[A, B]( t: (A, B) ) {
+		def map[C, D]( f: ( (A, B) ) => (C, D) ) = f( t )
+	}
+
+	implicit def tuple22richTuple2[A, B]( t: (A, B) ) = new RichTuple2( t )
+
+	implicit def toRichTraversableOnce[A] = collection.toRichTraversableOnce[A] _
+
+	implicit def toRichArray[A] = collection.toRichArray[A] _
+
+	class RichString( s: String ) {
+		def substringAfter( delimiter: String ) = if ( s.contains( delimiter ) ) s.substring( s.indexOf( delimiter ) + 1 ) else ""
+
+		def substringBefore( delimiter: String ) = if ( s.contains( delimiter ) ) s.substring( 0, s.indexOf( delimiter ) ) else s
+	}
+
+	implicit def toRichString( s: String ) = new RichString( s )
 }

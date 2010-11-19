@@ -47,4 +47,10 @@ package object io {
 		copy( in, bytes )
 		bytes.toByteArray
 	}
+
+	class RichInputStream( is: InputStream ) {
+		def readAs[R]( implicit toResult: Array[Byte] => R ): R = io.readAs[R]( is )
+	}
+
+	implicit def toRichInputStream( is: InputStream ) = new RichInputStream( is )
 }

@@ -42,6 +42,6 @@ public @interface Param {
 	From from() default From.QUERY;
 
 	public enum From {
-		QUERY, PATH
+		QUERY, PATH, BODY
 	}
 }

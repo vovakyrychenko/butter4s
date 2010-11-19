@@ -24,6 +24,8 @@
     <orderEntry type="library" name="Scala2.8" level="application" />
     <orderEntry type="module" module-name="lang" />
     <orderEntry type="library" name="Servlet Runtime" level="project" />
+    <orderEntry type="library" name="Http Runtime" level="project" />
+    <orderEntry type="module" module-name="io" />
   </component>
 </module>
 
