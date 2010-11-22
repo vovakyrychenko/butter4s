@@ -48,4 +48,9 @@ public @interface Method {
 	public enum Http {
 		GET, POST
 	}
+
+	interface Constants {
+		String DEFAULT = "DEFAULT";
+		String NONE = DEFAULT;
+	}
 }

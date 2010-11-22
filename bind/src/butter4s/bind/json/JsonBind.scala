@@ -27,7 +27,6 @@ import butter4s.reflect._
 import javax.xml.bind.annotation.{XmlElement, XmlAttribute}
 import javax.xml.bind.UnmarshalException
 import java.lang.reflect.{TypeVariable, ParameterizedType, Type}
-import butter4s.bind.json.JsonAST._
 import butter4s.bind.json.JsonParser.ParseException
 
 /**
@@ -58,29 +57,18 @@ object JsonBind {
 
 	def unmarshal[A: Manifest]( input: String ): Option[A] = unmarshal( input, manifest[A].asParameterizedType ).asInstanceOf[Option[A]]
 
-	def unmarshal( input: String, t: Type ): Option[Any] =
-		if ( input.startsWith( "\"" ) && input.endsWith( "\"" ) ) Some( input )
-		else if ( "null".equals( input.trim ) ) Some( null )
-		else try Some( unmarshalNumber( t, input.toDouble ) ) catch {
-			case e: NumberFormatException =>
-				try Some( input.toBoolean ) catch {
-					case e: NumberFormatException =>
-						try Some( unmarshalUnknown( t, JsonParser.parse( input ) ) ) catch {case e: ParseException => None}
-				}
-		}
+	def unmarshal( input: String, t: Type ): Option[Any] = try Some( unmarshalUnknown( t, JsonParser.parse( input ) ) ) catch {case e: ParseException => None}
 
-	private def unmarshalUnknown( t: Type, value: JValue ): Any = value match {
-		case JNull => null
-		case JString( v ) => v
-		case JBool( v ) => v
-		case JDouble( v ) => unmarshalNumber( t, v )
-		case JInt( v ) => unmarshalNumber( t, v.toDouble )
-		case JArray( v ) => unmarshalList( t.asInstanceOf[ParameterizedType], v )
-		case JObject( v ) => unmarshalObject( t, v )
-		case _ => throw new UnmarshalException( "should not happen" )
+	private def unmarshalUnknown( t: Type, value: Any ): Any = value match {
+		case null => null
+		case v: String => v
+		case v: Boolean => v
+		case v: Double => unmarshalNumber( t, v )
+		case v: List[Any] => unmarshalList( t.asInstanceOf[ParameterizedType], v )
+		case v: Map[String, Any] => unmarshalObject( t, v )
 	}
 
-	private def unmarshalList( t: ParameterizedType, list: List[JValue] ) = list.map( unmarshalUnknown( t.getActualTypeArguments()( 0 ), _ ) )
+	private def unmarshalList( t: ParameterizedType, list: List[Any] ) = list.map( unmarshalUnknown( t.getActualTypeArguments()( 0 ), _ ) )
 
 	private def unmarshalNumber( t: Type, v: Double ): AnyVal =
 		if ( t.assignableFrom[Int] ) v.toInt
@@ -94,10 +82,10 @@ object JsonBind {
 		else if ( t.assignableFrom[Float] ) v.toFloat
 		else if ( t.assignableFrom[java.lang.Float] ) v.toFloat else v
 
-	private def unmarshalObject( t: Type, fields: List[JField] ): AnyRef = {
+	private def unmarshalObject( t: Type, map: Map[String,Any] ): AnyRef = {
 		val clazz = t.toClass[AnyRef]
 		val obj = clazz.newInstance
-		for ( JField( name, value ) <- fields ) clazz.declaredField( name ) match {
+		for ( ( name, value ) <- map ) clazz.declaredField( name ) match {
 			case None => throw new UnmarshalException( "field " + name + " is not declared in " + clazz )
 			case Some( field ) => field.set( obj, unmarshalUnknown( if ( field.getGenericType.isInstanceOf[TypeVariable[_]] ) field.getGenericType.resolveWith( t.asInstanceOf[ParameterizedType] ) else field.getGenericType, value ) )
 		}

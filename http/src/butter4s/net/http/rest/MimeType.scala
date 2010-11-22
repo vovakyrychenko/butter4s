@@ -29,7 +29,7 @@ package butter4s.net.http.rest
 object MimeType {
 	final val APPLICATION_JSON = "application/json"
 	final val TEXT_JAVASCRIPT = "text/javascript"
-	final val APPLICATION_JAVA_CLASS = Constants.APPLICATION_JAVA_CLASS
+	final val APPLICATION_JAVA_CLASS = "application/java-class"
 
 	final val jsonTypes = Array( APPLICATION_JSON )
 

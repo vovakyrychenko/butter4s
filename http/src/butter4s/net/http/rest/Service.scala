@@ -31,6 +31,7 @@ import butter4s.bind.json.JsonBind
 import butter4s.logging.Logging
 import java.lang.reflect.{ParameterizedType, InvocationTargetException}
 import java.io.{InputStream, Writer}
+import butter4s.net.http.rest.Method.Constants
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
@@ -192,8 +193,8 @@ trait Service extends Logging {
 					queryParams.map( p => {
 						val restParam = p.annotation[Param].get
 						"\t\t\t\t\t" + restParam.name + ":" + ( if ( p.genericType.assignableFrom[List[_]] ) restParam.name + ".collect(function(x){return " +
-								wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", "x", ")" ) + ";})" else
-							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
+								wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", "x", ")" ) + ";})" else
+							wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
 					"\t\t\t\tmethod: '" + restMethod.http + "',\n" +
@@ -222,8 +223,8 @@ trait Service extends Logging {
 					queryParams.map( p => {
 						val restParam = p.annotation[Param].get
 						"\t\t\t\t\t" + restParam.name + ":" + ( if ( p.genericType.assignableFrom[List[_]] ) restParam.name + ".collect(function(x){return " +
-								wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", "x", ")" ) + ";})" else
-							wrapIf( restParam.typeHint != Constants.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
+								wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", "x", ")" ) + ";})" else
+							wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
 					"\t\t\t\tmethod: '" + restMethod.http + "',\n" +

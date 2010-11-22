@@ -99,7 +99,7 @@ class EmbeddedContext( val serviceName: String ) extends rest.Context {
 
 object EmbeddedRequestAdapter {
 	def parseParams( params: String ): mutable.Map[String, ArrayBuffer[String]] =
-		if ( params != null && params != "" && params.indexOf( "\n" ) == params.lastIndexOf( "\n" ) )
+		if ( params != null && params != "" && params.indexOf( "\n" ) == params.lastIndexOf( "\n" ) && params.contains( "=" ) )
 			params.split( "&" ).map( _.span( _ != '=' ).map {case (n, v) => (n, URLDecoder.decode( v.substring( 1 ), "UTF-8" ))} ).toMultiArrayMap
 		else mutable.Map[String, ArrayBuffer[String]]()
 }

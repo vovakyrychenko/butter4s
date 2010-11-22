@@ -24,7 +24,7 @@
 package butter4s.net.http.rest.embedded
 
 import butter4s.net.http.rest
-import butter4s.net.http.rest.Param.From._
+import rest.Param.From._
 
 
 /**
@@ -38,5 +38,5 @@ object ServerTest extends Application {
 
 object MathService extends rest.Service {
 	@rest.Method( produces = rest.MimeType.APPLICATION_JSON )
-	def sum( @rest.Param( name = "a" ) a: Int, @rest.Param( name = "b" ) b: Int, @rest.Param( name = "c", from = BODY ) c: Int ) = a + b + c
+	def sum( @rest.Param( name = "a" ) a: Int, @rest.Param( name = "b" ) b: Int, @rest.Param( name = "c", from = rest.Param.From.BODY ) c: Int ) = a + b + c
 }

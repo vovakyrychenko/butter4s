@@ -37,11 +37,12 @@ import java.lang.annotation.Target;
 public @interface Param {
 	String name();
 
-	String typeHint() default Constants.APPLICATION_JAVA_CLASS;
+	String typeHint() default "application/java-class";
 
 	From from() default From.QUERY;
 
-	public enum From {
+	public static enum From {
 		QUERY, PATH, BODY
 	}
+
 }
