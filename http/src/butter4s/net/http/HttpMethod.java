@@ -22,33 +22,11 @@
  *  THE SOFTWARE.
  */
 
-package butter4s.net.http.rest;
-
-import butter4s.net.http.HttpMethod;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package butter4s.net.http;
 
 /**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
- */
-@Target( ElementType.PARAMETER )
-@Retention( RetentionPolicy.RUNTIME )
-public @interface Method {
-	String charset() default "UTF-8";
-
-	String produces() default Constants.NONE;
-
-	String path() default Constants.DEFAULT;
-
-	boolean raw() default false;
-
-	HttpMethod httpMethod() default HttpMethod.POST;
-
-	interface Constants {
-		String DEFAULT = "$DEFAULT$";
-		String NONE = DEFAULT;
-	}
+* @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+*/
+public enum HttpMethod {
+	GET, POST, PUT, DELETE, HEAD
 }

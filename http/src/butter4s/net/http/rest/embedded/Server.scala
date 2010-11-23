@@ -25,7 +25,6 @@ package butter4s.net.http.rest.embedded
 
 import butter4s.logging.Logging
 import butter4s.lang.concurrent._
-import butter4s.net.http.rest
 import org.apache.http.params.{CoreConnectionPNames, CoreProtocolPNames, BasicHttpParams}
 import org.apache.http.impl.{DefaultHttpServerConnection, DefaultHttpResponseFactory, DefaultConnectionReuseStrategy}
 import org.apache.http.protocol.{HttpContext, HttpRequestHandler, BasicHttpContext, HttpService, HttpRequestHandlerRegistry, ResponseConnControl, BasicHttpProcessor, ResponseDate, ResponseServer, ResponseContent}
@@ -37,6 +36,7 @@ import collection.mutable
 import mutable.ArrayBuffer
 import org.apache.http.entity.{ContentProducer, EntityTemplate}
 import java.io.{ByteArrayInputStream, OutputStreamWriter, OutputStream, Writer}
+import butter4s.net.http.{HttpMethod, rest}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
@@ -124,9 +124,11 @@ class EmbeddedRequestAdapter( req: HttpRequest, val context: rest.Context ) exte
 		case x :: xs => Some( x )
 	}
 
-	lazy val session = new EmbeddedSession
-
 	lazy val requestLine = req.getRequestLine.getUri.substringBefore( "?" ).substring( context.serviceLocation.length )
+
+	lazy val httpMethod = HttpMethod.valueOf( req.getRequestLine.getMethod.toUpperCase )
+
+	lazy val session = new EmbeddedSession
 
 	lazy val body = if ( req.isInstanceOf[HttpEntityEnclosingRequest] ) req.asInstanceOf[HttpEntityEnclosingRequest].getEntity.getContent else new ByteArrayInputStream( Array[Byte]() )
 }

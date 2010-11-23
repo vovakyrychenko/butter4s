@@ -13,17 +13,25 @@
 
 package butter4s.net.http.rest.servlet
 
-import butter4s.net.http.rest
 import javax.servlet.http.{HttpSession, HttpServletResponse, HttpServletRequest, HttpServlet}
 import java.io.Writer
+import butter4s.net.http.{HttpMethod, rest}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 class ServletService extends HttpServlet with rest.Service {
-	override def doPost( req: HttpServletRequest, resp: HttpServletResponse ) = doGet( req, resp )
+	override def doDelete( req: HttpServletRequest, resp: HttpServletResponse ) = doIt( req, resp )
 
-	override def doGet( req: HttpServletRequest, resp: HttpServletResponse ) = perform( new ServletRequestAdapter( req, this ), new ServletResponseAdapter( resp ) )
+	override def doPut( req: HttpServletRequest, resp: HttpServletResponse ) = doIt( req, resp )
+
+	override def doHead( req: HttpServletRequest, resp: HttpServletResponse ) = doIt( req, resp )
+
+	override def doPost( req: HttpServletRequest, resp: HttpServletResponse ) = doIt( req, resp )
+
+	override def doGet( req: HttpServletRequest, resp: HttpServletResponse ) = doIt( req, resp )
+
+	def doIt( req: HttpServletRequest, resp: HttpServletResponse ) = perform( new ServletRequestAdapter( req, this ), new ServletResponseAdapter( resp ) )
 
 }
 
@@ -33,6 +41,8 @@ class ServletRequestAdapter( req: HttpServletRequest, servlet: HttpServlet ) ext
 	def parameter( name: String ) = Option( req.getParameter( name ) )
 
 	lazy val requestLine = req.getRequestURI.substring( req.getServletPath.length )
+
+	lazy val httpMethod = HttpMethod.valueOf( req.getMethod.toUpperCase )
 
 	lazy val context = new ServletContextAdapter( req, servlet )
 

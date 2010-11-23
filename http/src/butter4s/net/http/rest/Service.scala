@@ -32,6 +32,7 @@ import butter4s.logging.Logging
 import java.lang.reflect.{ParameterizedType, InvocationTargetException}
 import java.io.{InputStream, Writer}
 import butter4s.net.http.rest.Method.Constants
+import butter4s.net.http.HttpMethod
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
@@ -51,7 +52,7 @@ trait Context {
 }
 
 object Request {
-	private def compile( mapping: String ) = mapping.replaceAll( "\\{([^\\}]*)\\}", "([^/]*)" ).r
+	private def compile( mapping: String ) = ( "^" + mapping.replaceAll( "\\{([^\\}]*)\\}", "([^/]+)" ) + "$" ).r
 
 	def pathParam( mapping: String, requestLine: String, name: String ) =
 		"\\{([^\\}]*)\\}".r.findAllIn( mapping ).indexOf( "{" + name + "}" ) match {
@@ -59,16 +60,19 @@ object Request {
 			case group => compile( mapping ).findFirstMatchIn( requestLine ).map( _.group( group + 1 ) )
 		}
 
-	def methodMatches( requestLine: String, m: butter4s.reflect.Method ) = m.annotation[Method] match {
+	def methodMatches( requestLine: String, httpMethod: HttpMethod, m: butter4s.reflect.Method ) = m.annotation[Method] match {
 		case None => false
 		case Some( restMethod ) =>
-			if ( restMethod.path == Method.Constants.DEFAULT ) requestLine == "/" + m.name
+			if ( restMethod.httpMethod != httpMethod ) false
+			else if ( restMethod.path == Method.Constants.DEFAULT ) requestLine == "/" + m.name
 			else compile( restMethod.path ).findFirstMatchIn( requestLine ).isDefined
 	}
 }
 
 trait Request {
 	val requestLine: String
+
+	val httpMethod: HttpMethod
 
 	val context: Context
 
@@ -191,7 +195,7 @@ trait Service extends Logging {
 
 	def perform( request: Request, response: Response ) = log.time( request.toString, try {
 		log.debug( "invoke " + request )
-		getClass.declaredMethod( Request.methodMatches( request.requestLine, _ ) ) match {
+		getClass.declaredMethod( Request.methodMatches( request.requestLine, request.httpMethod, _ ) ) match {
 			case None => respond( NOT_FOUND, request.requestLine + " is unbound" )
 			case Some( method ) => method.annotation[Method] match {
 				case None => respond( NOT_FOUND, method.name + " is not exposed" )
@@ -248,7 +252,7 @@ trait Service extends Logging {
 							wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tmethod: '" + restMethod.http + "',\n" +
+					"\t\t\t\tmethod: '" + restMethod.httpMethod + "',\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tasynchronous: false,\n" +
@@ -268,7 +272,7 @@ trait Service extends Logging {
 			val (queryParams, pathParams) = params.partition( _.annotation[Param].get.from == Param.From.QUERY )
 			val restMethod = method.annotation[Method].get
 			"\t\t" + method.name + ": function (" + ( params.map( _.annotation[Param].get.name ) :+ "succeed" :+ "failed" ).mkString( "," ) + ") {\n" +
-					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation + 
+					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
 					( if ( restMethod.path == Method.Constants.DEFAULT ) "/" + method.name else restMethod.path.replaceAll( "\\{", "'+" ).replaceAll( "\\}", "+'" ) ) + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
 					queryParams.map( p => {
@@ -278,7 +282,7 @@ trait Service extends Logging {
 							wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tmethod: '" + restMethod.http + "',\n" +
+					"\t\t\t\tmethod: '" + restMethod.httpMethod + "',\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tonSuccess: function( response ) {\n" +

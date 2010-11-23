@@ -26,6 +26,7 @@ package butter4s.net.http.rest
 import org.junit.{Assert, Test}
 import butter4s.reflect._
 import Assert.assertEquals
+import butter4s.net.http.HttpMethod
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
@@ -40,9 +41,11 @@ class RequestTestCase {
 	}
 
 	@Test def methodMatches = {
-		assertEquals( "items", classOf[X].declaredMethod( Request.methodMatches( "/items", _ ) ).get.name )
-		assertEquals( "item", classOf[X].declaredMethod( Request.methodMatches( "/items/1", _ ) ).get.name )
-
+		assertEquals( "items", classOf[X].declaredMethod( Request.methodMatches( "/items", HttpMethod.POST, _ ) ).get.name )
+		assertEquals( "item", classOf[X].declaredMethod( Request.methodMatches( "/items/1", HttpMethod.POST, _ ) ).get.name )
+		assertEquals( "items", classOf[Y].declaredMethod( Request.methodMatches( "/", HttpMethod.POST, _ ) ).get.name )
+		assertEquals( "item", classOf[Y].declaredMethod( Request.methodMatches( "/1", HttpMethod.POST, _ ) ).get.name )
+		assertEquals( "store", classOf[Y].declaredMethod( Request.methodMatches( "/1", HttpMethod.PUT, _ ) ).get.name )
 	}
 }
 
@@ -51,5 +54,13 @@ class X {
 	def items = List( 1, 2, 3 )
 
 	@Method( path = "/items/{item}" )
+	def item( i: Int ) = i
+}
+
+class Y {
+	@Method( path = "/" )
+	def items = List( 1, 2, 3 )
+
+	@Method( path = "/{item}" )
 	def item( i: Int ) = i
 }
