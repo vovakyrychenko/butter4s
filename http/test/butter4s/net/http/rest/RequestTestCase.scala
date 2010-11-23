@@ -45,7 +45,6 @@ class RequestTestCase {
 		assertEquals( "item", classOf[X].declaredMethod( Request.methodMatches( "/items/1", HttpMethod.POST, _ ) ).get.name )
 		assertEquals( "items", classOf[Y].declaredMethod( Request.methodMatches( "/", HttpMethod.POST, _ ) ).get.name )
 		assertEquals( "item", classOf[Y].declaredMethod( Request.methodMatches( "/1", HttpMethod.POST, _ ) ).get.name )
-		assertEquals( "store", classOf[Y].declaredMethod( Request.methodMatches( "/1", HttpMethod.PUT, _ ) ).get.name )
 	}
 }
 
