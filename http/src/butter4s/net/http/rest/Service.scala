@@ -143,22 +143,47 @@ trait ContentProducer {
 	def marshal( content: Any ): String
 }
 
-trait ParameterBinder {
-	def bind( value: String, t: Type )
+trait ParameterConvertor {
+	def convert( value: String, t: Type )
 }
 
 object Service {
-	private[rest] var producers = Map[String, Any => String]()
-	producers += MimeType.TEXT_JAVASCRIPT -> ( content => String.valueOf( content ) )
-	producers += MimeType.APPLICATION_JSON -> ( content => JsonBind.marshal( content ) )
+	private[rest] var producers = Map[String, Any => String](
+		MimeType.TEXT_JAVASCRIPT -> ( content => String.valueOf( content ) ),
+		MimeType.APPLICATION_JSON -> ( content => JsonBind.marshal( content ) )
+		)
 
 	def registerContentProducer( contentType: String, cp: ContentProducer ): Unit = registerContentProducer( contentType, cp.marshal( _ ) )
 
-	def registerContentProducer( contentType: String, cp: Any => String ) = producers += contentType -> cp
+	def registerContentProducer( contentType: String, produce: Any => String ) = producers += contentType -> produce
 
-	def registerParameterBinder( typeHint: String, pb: ParameterBinder ): Unit = registerParameterBinder( typeHint, pb.bind( _, _ ) )
+	private var converters = Map[String, (String, java.lang.reflect.Type) => Any](
+		classOf[Int].getName -> {(s, _) => s.toInt},
+		classOf[java.lang.Integer].getName -> {(s, _) => s.toInt},
+		classOf[Long].getName -> {(s, _) => s.toLong},
+		classOf[java.lang.Long].getName -> {(s, _) => s.toLong},
+		classOf[Short].getName -> ( (s, _) => s.toShort ),
+		classOf[java.lang.Short].getName -> ( (s, _) => s.toShort ),
+		classOf[Byte].getName -> ( (s, _) => s.toByte ),
+		classOf[java.lang.Byte].getName -> ( (s, _) => s.toByte ),
+		classOf[Float].getName -> ( (s, _) => s.toFloat ),
+		classOf[java.lang.Float].getName -> ( (s, _) => s.toFloat ),
+		classOf[Double].getName -> ( (s, _) => s.toDouble ),
+		classOf[java.lang.Double].getName -> {(s, _) => s.toDouble},
+		classOf[Boolean].getName -> {(s, _) => s.toBoolean},
+		classOf[java.lang.Boolean].getName -> {(s, _) => s.toBoolean},
+		classOf[String].getName -> {(s, _) => s},
+		MimeType.APPLICATION_JSON -> {(s, t) => JsonBind.unmarshal( s, t ).get}
+		)
 
-	def registerParameterBinder( typeHint: String, pb: (String, java.lang.reflect.Type) => Any ) = Convert.converters += typeHint -> pb
+	def convert( value: String, hint: String, targetType: Type ) =
+		( if ( hint == MimeType.APPLICATION_JAVA_CLASS ) converters( targetType.toClass[AnyRef].getName )
+		else converters( hint ) )( value, targetType )
+
+	def registerParameterBinder( typeHint: String, pc: ParameterConvertor ): Unit = registerParameterBinder( typeHint, pc.convert( _, _ ) )
+
+	def registerParameterBinder( typeHint: String, convert: (String, java.lang.reflect.Type) => Any ) = converters += typeHint -> convert
+
 }
 
 trait Service extends Logging {
@@ -176,10 +201,10 @@ trait Service extends Logging {
 						if ( p.genericType.assignableFrom[Request] ) request
 						else if ( p.genericType.assignableFrom[List[_]] ) p.annotation[Param] match {
 							case None => respond( INTERNAL_SERVER_ERROR, "method parameter of type " + p.genericType + " is not annotated properly" )
-							case Some( restParam ) => request.parameters( restParam.name ).map( Convert.to( _, restParam.typeHint, p.genericType.asInstanceOf[ParameterizedType].getActualTypeArguments()( 0 ) ) )
+							case Some( restParam ) => request.parameters( restParam.name ).map( Service.convert( _, restParam.typeHint, p.genericType.asInstanceOf[ParameterizedType].getActualTypeArguments()( 0 ) ) )
 						} else p.annotation[Param] match {
 							case None => respond( INTERNAL_SERVER_ERROR, "method parameter of type " + p.genericType + " is not annotated properly" )
-							case Some( restParam ) => Convert.to( ( restParam.from match {
+							case Some( restParam ) => Service.convert( ( restParam.from match {
 								case Param.From.BODY => Some( request.body.readAs[String] )
 								case Param.From.QUERY => request.parameter( restParam.name )
 								case Param.From.PATH => request.parameter( restMethod.path, restParam.name )

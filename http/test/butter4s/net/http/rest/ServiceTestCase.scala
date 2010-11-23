@@ -31,8 +31,8 @@ import butter4s.bind.json.JsonBind
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-class ConvertTestCase {
-	@Test def convertJSON = Assert.assertEquals( Bean( "test" ), Convert.to( JsonBind.marshal( Bean( "test" ) ), MimeType.APPLICATION_JSON, classOf[Bean] ) )
+class ServiceTestCase {
+	@Test def convertJSON = Assert.assertEquals( Bean( "test" ), Service.convert( JsonBind.marshal( Bean( "test" ) ), MimeType.APPLICATION_JSON, classOf[Bean] ) )
 }
 
 case class Bean( @( XmlAttribute@field ) var name: String ) {
