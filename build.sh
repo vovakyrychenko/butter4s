@@ -22,4 +22,6 @@
 #  THE SOFTWARE.
 #
 
+fsc > /dev/null
 ant -f .build/build.xml -Dproject.home=. $@
+fsc -shutdown

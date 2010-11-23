@@ -32,7 +32,7 @@ class ServletRequestAdapter( req: HttpServletRequest, servlet: HttpServlet ) ext
 
 	def parameter( name: String ) = Option( req.getParameter( name ) )
 
-	lazy val requestLine = req.getRequestURI.substring( req.getServletPath.length + 1 )
+	lazy val requestLine = req.getRequestURI.substring( req.getServletPath.length )
 
 	lazy val context = new ServletContextAdapter( req, servlet )
 
@@ -42,7 +42,7 @@ class ServletRequestAdapter( req: HttpServletRequest, servlet: HttpServlet ) ext
 }
 
 class ServletContextAdapter( req: HttpServletRequest, servlet: HttpServlet ) extends rest.Context {
-	lazy val serviceLocation = req.getRequestURI.substring( 0, req.getServletPath.length + 1 )
+	lazy val serviceLocation = req.getRequestURI.substring( 0, req.getServletPath.length )
 
 	lazy val serviceName = servlet.getServletConfig.getServletName
 }
