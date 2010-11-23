@@ -134,7 +134,7 @@ object Response {
 trait Response {
 	def content( contentType: String, what: ( => Writer ) => Unit ): Unit
 
-	def     status( code: Int, message: String = null ): Unit
+	def status( code: Int, message: String = null ): Unit
 }
 
 class ImmediateResponse( val code: Int, val message: String ) extends RuntimeException( message )
@@ -152,9 +152,13 @@ object Service {
 	producers += MimeType.TEXT_JAVASCRIPT -> ( content => String.valueOf( content ) )
 	producers += MimeType.APPLICATION_JSON -> ( content => JsonBind.marshal( content ) )
 
-	def registerContentProducer( contentType: String, cp: ContentProducer ) = producers += contentType -> ( content => cp.marshal( content ) )
+	def registerContentProducer( contentType: String, cp: ContentProducer ): Unit = registerContentProducer( contentType, cp.marshal( _ ) )
 
-	def registerParameterBinder( typeHint: String, pb: ParameterBinder ) = Convert.converters += typeHint -> ( (value, t) => pb.bind( value, t ) )
+	def registerContentProducer( contentType: String, cp: Any => String ) = producers += contentType -> cp
+
+	def registerParameterBinder( typeHint: String, pb: ParameterBinder ): Unit = registerParameterBinder( typeHint, pb.bind( _, _ ) )
+
+	def registerParameterBinder( typeHint: String, pb: (String, java.lang.reflect.Type) => Any ) = Convert.converters += typeHint -> pb
 }
 
 trait Service extends Logging {
