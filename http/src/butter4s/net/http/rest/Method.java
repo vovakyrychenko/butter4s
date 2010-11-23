@@ -50,7 +50,7 @@ public @interface Method {
 	}
 
 	interface Constants {
-		String DEFAULT = "DEFAULT";
+		String DEFAULT = "$DEFAULT$";
 		String NONE = DEFAULT;
 	}
 }

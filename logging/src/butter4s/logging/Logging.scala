@@ -59,9 +59,9 @@ trait Logging {
 	def fatal( any: => Any, error: => Throwable ) = if ( impl.isFatalEnabled ) impl.fatal( any, error )
 
 	def time[A]( message: String, f: => A ): A = {
-		val start = Platform.currentTime
+		val start = System.nanoTime
 		val result = f
-		debug( message + " took " + ( Platform.currentTime - start ) + " ms..." )
+		debug( message + " took " + ( ( System.nanoTime - start ) / 1000 ) + " mcs..." )
 		result
 	}
 

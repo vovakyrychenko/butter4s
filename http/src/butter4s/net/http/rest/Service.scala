@@ -36,14 +36,6 @@ import butter4s.net.http.rest.Method.Constants
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-object Request {
-	def pathParam( mapping: String, localPath: String, name: String ) =
-		"\\{([^\\}]*)\\}".r.findAllIn( mapping ).indexOf( "{" + name + "}" ) match {
-			case -1 => None
-			case group => mapping.replaceAll( "\\{([^\\}]*)\\}", "([^/]*)" ).r.findFirstMatchIn( localPath ).map( _.group( group + 1 ) )
-		}
-}
-
 trait Session {
 	def apply[A]( name: String ): Option[A]
 
@@ -58,15 +50,29 @@ trait Context {
 	val serviceLocation: String
 }
 
+object Request {
+	private def compile( mapping: String ) = mapping.replaceAll( "\\{([^\\}]*)\\}", "([^/]*)" ).r
+
+	def pathParam( mapping: String, requestLine: String, name: String ) =
+		"\\{([^\\}]*)\\}".r.findAllIn( mapping ).indexOf( "{" + name + "}" ) match {
+			case -1 => None
+			case group => compile( mapping ).findFirstMatchIn( requestLine ).map( _.group( group + 1 ) )
+		}
+
+	def methodMatches( requestLine: String, m: butter4s.reflect.Method ) = m.annotation[Method] match {
+		case None => false
+		case Some( restMethod ) =>
+			if ( restMethod.path == Method.Constants.DEFAULT ) requestLine == "/" + m.name
+			else compile( restMethod.path ).findFirstMatchIn( requestLine ).isDefined
+	}
+}
+
 trait Request {
 	val requestLine: String
 
 	val context: Context
 
-	lazy val methodName = if ( requestLine.contains( "/" ) ) requestLine.substring( 0, requestLine.indexOf( "/" ) ) else requestLine
-	lazy val methodPath = requestLine.substring( methodName.length )
-
-	def parameter( mapping: String, name: String ) = Request.pathParam( mapping, methodPath, name )
+	def parameter( mapping: String, name: String ) = Request.pathParam( mapping, requestLine, name )
 
 	def parameter( name: String ): Option[String]
 
@@ -128,20 +134,38 @@ object Response {
 trait Response {
 	def content( contentType: String, what: ( => Writer ) => Unit ): Unit
 
-	def status( code: Int, message: String = null ): Unit
+	def     status( code: Int, message: String = null ): Unit
 }
 
 class ImmediateResponse( val code: Int, val message: String ) extends RuntimeException( message )
+
+trait ContentProducer {
+	def marshal( content: Any ): String
+}
+
+trait ParameterBinder {
+	def bind( value: String, t: Type )
+}
+
+object Service {
+	private[rest] var producers = Map[String, Any => String]()
+	producers += MimeType.TEXT_JAVASCRIPT -> ( content => String.valueOf( content ) )
+	producers += MimeType.APPLICATION_JSON -> ( content => JsonBind.marshal( content ) )
+
+	def registerContentProducer( contentType: String, cp: ContentProducer ) = producers += contentType -> ( content => cp.marshal( content ) )
+
+	def registerParameterBinder( typeHint: String, pb: ParameterBinder ) = Convert.converters += typeHint -> ( (value, t) => pb.bind( value, t ) )
+}
 
 trait Service extends Logging {
 	import Response.Code._
 
 	def perform( request: Request, response: Response ) = log.time( request.toString, try {
 		log.debug( "invoke " + request )
-		getClass.declaredMethod( request.methodName ) match {
-			case None => respond( NOT_FOUND, request.methodName + " is not found" )
+		getClass.declaredMethod( Request.methodMatches( request.requestLine, _ ) ) match {
+			case None => respond( NOT_FOUND, request.requestLine + " is unbound" )
 			case Some( method ) => method.annotation[Method] match {
-				case None => respond( NOT_FOUND, request.methodName + " is not exposed" )
+				case None => respond( NOT_FOUND, method.name + " is not exposed" )
 				case Some( restMethod ) =>
 					val result = method.invoke( this, method.parameters.map( p => {
 						log.debug( p )
@@ -162,12 +186,10 @@ trait Service extends Logging {
 						}
 					} ): _ * )
 
-					restMethod.produces match {
-						case MimeType.APPLICATION_JSON =>
-							response.content( restMethod.produces + "; charset=" + restMethod.charset, _.write( if ( restMethod.raw ) result.toString else JsonBind.marshal( result ) ) )
-						case MimeType.TEXT_JAVASCRIPT =>
-							response.content( restMethod.produces + "; charset=" + restMethod.charset, _.write( result.toString ) )
-						case _ => response.status( if ( result == null ) OK else result.asInstanceOf[Int] )
+					if ( restMethod.raw ) response.content( restMethod.produces + "; charset=" + restMethod.charset, _.write( String.valueOf( result ) ) )
+					else Service.producers.get( restMethod.produces ) match {
+						case None => response.status( if ( result == null ) OK else result.asInstanceOf[Int] )
+						case Some( toContent ) => response.content( restMethod.produces + "; charset=" + restMethod.charset, _.write( toContent( result ) ) )
 					}
 			}
 		}

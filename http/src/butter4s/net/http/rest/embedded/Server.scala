@@ -126,7 +126,7 @@ class EmbeddedRequestAdapter( req: HttpRequest, val context: rest.Context ) exte
 
 	lazy val session = new EmbeddedSession
 
-	lazy val requestLine = req.getRequestLine.getUri.substringBefore( "?" ).substring( context.serviceLocation.length + 1 )
+	lazy val requestLine = req.getRequestLine.getUri.substringBefore( "?" ).substring( context.serviceLocation.length )
 
 	lazy val body = if ( req.isInstanceOf[HttpEntityEnclosingRequest] ) req.asInstanceOf[HttpEntityEnclosingRequest].getEntity.getContent else new ByteArrayInputStream( Array[Byte]() )
 }

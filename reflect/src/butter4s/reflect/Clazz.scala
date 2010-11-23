@@ -88,6 +88,8 @@ class Clazz[A]( val impl: Class[_] ) extends AnnotationTarget {
 
 	def declaredMethod( name: String ) = declaredMethods.find( _.name == name )
 
+	def declaredMethod( p: Method => Boolean ) = declaredMethods.find( p )
+
 	def annotatedField[A <: java.lang.annotation.Annotation : Manifest] = declaredFields.find( _.annotatedWith[A] )
 
 	def assignableFrom[C: Manifest] = impl.isAssignableFrom( manifest[C].erasure )

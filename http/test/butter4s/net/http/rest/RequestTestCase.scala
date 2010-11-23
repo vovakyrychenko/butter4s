@@ -24,16 +24,32 @@
 package butter4s.net.http.rest
 
 import org.junit.{Assert, Test}
+import butter4s.reflect._
+import Assert.assertEquals
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 class RequestTestCase {
 	@Test def pathParam = {
-		val mapping = "/{year}/{month}/{date}"
-		val path = "/2009/April/12"
-		Assert.assertEquals( "2009", Request.pathParam( mapping, path, "year" ).get );
-		Assert.assertEquals( "April", Request.pathParam( mapping, path, "month" ).get );
-		Assert.assertEquals( "12", Request.pathParam( mapping, path, "date" ).get );
+		val mapping = "/y/{year}/{month}/{date}"
+		val path = "/y/2009/April/12"
+		assertEquals( "2009", Request.pathParam( mapping, path, "year" ).get );
+		assertEquals( "April", Request.pathParam( mapping, path, "month" ).get );
+		assertEquals( "12", Request.pathParam( mapping, path, "date" ).get );
 	}
+
+	@Test def methodMatches = {
+		assertEquals( "items", classOf[X].declaredMethod( Request.methodMatches( "/items", _ ) ).get.name )
+		assertEquals( "item", classOf[X].declaredMethod( Request.methodMatches( "/items/1", _ ) ).get.name )
+
+	}
+}
+
+class X {
+	@Method
+	def items = List( 1, 2, 3 )
+
+	@Method( path = "/items/{item}" )
+	def item( i: Int ) = i
 }

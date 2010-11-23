@@ -32,25 +32,25 @@ import java.lang.reflect.Type
  */
 
 object Convert {
-	private val converters: Map[String, ( (String, String, Type) => Any )] = Map(
-		classOf[Int].getName -> {(s, _, _) => s.toInt},
-		classOf[java.lang.Integer].getName -> {(s, _, _) => s.toInt},
-		classOf[Long].getName -> {(s, _, _) => s.toLong},
-		classOf[java.lang.Long].getName -> {(s, _, _) => s.toLong},
-		classOf[Short].getName -> ( (s, _, _) => s.toShort ),
-		classOf[java.lang.Short].getName -> ( (s, _, _) => s.toShort ),
-		classOf[Byte].getName -> ( (s, _, _) => s.toByte ),
-		classOf[java.lang.Byte].getName -> ( (s, _, _) => s.toByte ),
-		classOf[Float].getName -> ( (s, _, _) => s.toFloat ),
-		classOf[java.lang.Float].getName -> ( (s, _, _) => s.toFloat ),
-		classOf[Double].getName -> ( (s, _, _) => s.toDouble ),
-		classOf[java.lang.Double].getName -> {(s, _, _) => s.toDouble},
-		classOf[Boolean].getName -> {(s, _, _) => s.toBoolean},
-		classOf[java.lang.Boolean].getName -> {(s, _, _) => s.toBoolean},
-		classOf[String].getName -> {(s, _, _) => s},
-		MimeType.APPLICATION_JSON -> {(s, _, t) => JsonBind.unmarshal( s, t ).get}
+	private[rest] var converters: Map[String, ( (String, Type) => Any )] = Map(
+		classOf[Int].getName -> {(s, _) => s.toInt},
+		classOf[java.lang.Integer].getName -> {(s, _) => s.toInt},
+		classOf[Long].getName -> {(s, _) => s.toLong},
+		classOf[java.lang.Long].getName -> {(s, _) => s.toLong},
+		classOf[Short].getName -> ( (s, _) => s.toShort ),
+		classOf[java.lang.Short].getName -> ( (s, _) => s.toShort ),
+		classOf[Byte].getName -> ( (s, _) => s.toByte ),
+		classOf[java.lang.Byte].getName -> ( (s, _) => s.toByte ),
+		classOf[Float].getName -> ( (s, _) => s.toFloat ),
+		classOf[java.lang.Float].getName -> ( (s, _) => s.toFloat ),
+		classOf[Double].getName -> ( (s, _) => s.toDouble ),
+		classOf[java.lang.Double].getName -> {(s, _) => s.toDouble},
+		classOf[Boolean].getName -> {(s, _) => s.toBoolean},
+		classOf[java.lang.Boolean].getName -> {(s, _) => s.toBoolean},
+		classOf[String].getName -> {(s, _) => s},
+		MimeType.APPLICATION_JSON -> {(s, t) => JsonBind.unmarshal( s, t ).get}
 		)
 
 	def to( value: String, hint: String, targetType: Type ) = ( if ( hint == MimeType.APPLICATION_JAVA_CLASS ) converters( targetType.toClass[AnyRef].getName )
-	else converters( hint ) )( value, hint, targetType )
+	else converters( hint ) )( value, targetType )
 }
