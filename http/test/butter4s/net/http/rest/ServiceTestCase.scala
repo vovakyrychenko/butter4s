@@ -26,13 +26,13 @@ package butter4s.net.http.rest
 import javax.xml.bind.annotation.XmlAttribute
 import annotation.target.field
 import org.junit.{Assert, Test}
-import butter4s.bind.json.JsonBind
+import butter4s.bind.json.Binder
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 class ServiceTestCase {
-	@Test def convertJSON = Assert.assertEquals( Bean( "test" ), Service.convert( JsonBind.marshal( Bean( "test" ) ), MimeType.APPLICATION_JSON, classOf[Bean] ) )
+	@Test def convertJSON = Assert.assertEquals( Bean( "test" ), Service.convert( Binder.marshal( Bean( "test" ) ), MimeType.APPLICATION_JSON, classOf[Bean] ) )
 }
 
 case class Bean( @( XmlAttribute@field ) var name: String ) {

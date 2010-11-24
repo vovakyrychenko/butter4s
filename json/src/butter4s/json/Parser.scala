@@ -15,12 +15,9 @@
 * limitations under the License.
 */
 
-package butter4s.bind.json
+package butter4s.json
 
-/**
- * Fast imperative parser.
- */
-object JsonParser {
+object Parser {
 	import java.io._
 
 	class ParseException( message: String, cause: Exception ) extends Exception( message, cause ) {
@@ -93,10 +90,10 @@ object JsonParser {
 	}
 
 	private[json] def unquote( string: String ): String =
-		unquote( new JsonParser.Buffer( new java.io.StringReader( string ), false ) )
+		unquote( new Parser.Buffer( new java.io.StringReader( string ), false ) )
 
-	private[json] def unquote( buf: JsonParser.Buffer ): String = {
-		def unquote0( buf: JsonParser.Buffer, base: String ): String = {
+	private[json] def unquote( buf: Parser.Buffer ): String = {
+		def unquote0( buf: Parser.Buffer, base: String ): String = {
 			val s = new java.lang.StringBuilder( base )
 			var c = '\\'
 			while ( c != '"' ) {
@@ -351,7 +348,7 @@ object JsonParser {
 
 		def release = segments.foreach( Segments.release )
 
-		private[JsonParser] def automaticClose = if ( closeAutomatically ) in.close
+		private[Parser] def automaticClose = if ( closeAutomatically ) in.close
 
 		private[this] def read = {
 			if ( offset >= segment.length ) {

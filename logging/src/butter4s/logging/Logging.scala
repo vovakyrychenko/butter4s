@@ -61,7 +61,7 @@ trait Logging {
 	def time[A]( message: String, f: => A ): A = {
 		val start = System.nanoTime
 		val result = f
-		debug( message + " took " + ( ( System.nanoTime - start ) / 1000 ) + " mcs..." )
+		debug( message + " took " + ( ( System.nanoTime - start ) / 1000 ) + " usec" )
 		result
 	}
 

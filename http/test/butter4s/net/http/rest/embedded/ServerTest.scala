@@ -28,7 +28,7 @@ import butter4s.net.http.rest
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 object ServerTest extends Application {
-	val server = new Server( 9000 )
+	val server = new Server( 9000, true )
 	server.add( "math", MathService )
 	server.run
 }

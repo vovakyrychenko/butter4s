@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package butter4s.bind.json
+package butter4s.json
 
-import org.junit.Test
+import org.junit.{Test, Assert}
+import Assert._
 import scala.annotation.target.field
 import javax.xml.bind.annotation.{XmlAttribute, XmlElement}
 import butter4s.logging.Logging
@@ -31,7 +32,13 @@ import butter4s.logging.Logging
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-class JsonBindTestCase extends Logging {
+class BinderTestCase extends Logging {
+	Binder.registerUnmarshaller[TestEnum]( new Binder.EnumUnmarshaller( classOf[TestEnum] ) )
+	@Test def bindEnum = {
+		assertBind( EnumBean( TestEnum.B ) )
+		assertBind( TestEnum.C )
+	}
+
 	@Test def bind = assertBind( Bean( "x", 10, Bean2( "y", 15, List( 1, 2, 3 ) ) ) )
 
 	@Test def bindPrimitives = {
@@ -60,13 +67,13 @@ class JsonBindTestCase extends Logging {
 
 	def assertBind[A: Manifest]( source: A ) = {
 		println( "========================================" )
-		val json = log.time( "marshal", JsonBind.marshal( source ) )
+		val json = log.time( "marshal", Binder.marshal( source ) )
 		println( "JSON:" )
 		println( json )
-		val result = log.time( "unmarshal", JsonBind.unmarshal[A]( json ).get )
+		val result = log.time( "unmarshal", Binder.unmarshal[A]( json ).get )
 		println( "Object:" )
 		println( result )
-		assert( source == result )
+		assertEquals( source, result )
 	}
 
 }
@@ -94,4 +101,8 @@ case class BeanGB( @( XmlElement@field ) var bg: BeanGeneric[List[Int]] ) {
 case class BeanGB2( @( XmlElement@field ) var bg: BeanGeneric[List[BeanGeneric[List[Int]]]],
                     @( XmlElement@field ) var bg2: BeanGeneric[List[BeanGeneric[List[Int]]]] ) {
 	def this() = this ( null, null )
+}
+
+case class EnumBean( @( XmlAttribute@field ) var v: TestEnum ) {
+	def this() = this ( null )
 }

@@ -3,10 +3,10 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/benchmark/benchmark.iml" filepath="$PROJECT_DIR$/benchmark/benchmark.iml" />
-      <module fileurl="file://$PROJECT_DIR$/bind/bind.iml" filepath="$PROJECT_DIR$/bind/bind.iml" />
       <module fileurl="file://$PROJECT_DIR$/butter4s.iml" filepath="$PROJECT_DIR$/butter4s.iml" />
       <module fileurl="file://$PROJECT_DIR$/http/http.iml" filepath="$PROJECT_DIR$/http/http.iml" />
       <module fileurl="file://$PROJECT_DIR$/io/io.iml" filepath="$PROJECT_DIR$/io/io.iml" />
+      <module fileurl="file://$PROJECT_DIR$/json/json.iml" filepath="$PROJECT_DIR$/json/json.iml" />
       <module fileurl="file://$PROJECT_DIR$/lang/lang.iml" filepath="$PROJECT_DIR$/lang/lang.iml" />
       <module fileurl="file://$PROJECT_DIR$/logging/logging.iml" filepath="$PROJECT_DIR$/logging/logging.iml" />
       <module fileurl="file://$PROJECT_DIR$/persistent/persistent.iml" filepath="$PROJECT_DIR$/persistent/persistent.iml" />

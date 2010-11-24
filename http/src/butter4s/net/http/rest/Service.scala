@@ -27,7 +27,7 @@ package butter4s.net.http.rest
 import butter4s.reflect._
 import butter4s.lang._
 import butter4s.io._
-import butter4s.bind.json.JsonBind
+import butter4s.bind.json.Binder
 import butter4s.logging.Logging
 import java.lang.reflect.{ParameterizedType, InvocationTargetException}
 import java.io.{InputStream, Writer}
@@ -63,7 +63,7 @@ object Request {
 	def methodMatches( requestLine: String, httpMethod: HttpMethod, m: butter4s.reflect.Method ) = m.annotation[Method] match {
 		case None => false
 		case Some( restMethod ) =>
-			if ( restMethod.httpMethod != httpMethod ) false
+			if ( !restMethod.httpMethod.contains( httpMethod ) ) false
 			else if ( restMethod.path == Method.Constants.DEFAULT ) requestLine == "/" + m.name
 			else compile( restMethod.path ).findFirstMatchIn( requestLine ).isDefined
 	}
@@ -154,7 +154,7 @@ trait ParameterConvertor {
 object Service {
 	private[rest] var producers = Map[String, Any => String](
 		MimeType.TEXT_JAVASCRIPT -> ( content => String.valueOf( content ) ),
-		MimeType.APPLICATION_JSON -> ( content => JsonBind.marshal( content ) )
+		MimeType.APPLICATION_JSON -> ( content => Binder.marshal( content ) )
 		)
 
 	def registerContentProducer( contentType: String, cp: ContentProducer ): Unit = registerContentProducer( contentType, cp.marshal( _ ) )
@@ -177,11 +177,11 @@ object Service {
 		classOf[Boolean].getName -> {(s, _) => s.toBoolean},
 		classOf[java.lang.Boolean].getName -> {(s, _) => s.toBoolean},
 		classOf[String].getName -> {(s, _) => s},
-		MimeType.APPLICATION_JSON -> {(s, t) => JsonBind.unmarshal( s, t ).get}
+		MimeType.APPLICATION_JSON -> {(s, t) => Binder.unmarshal( s, t ).get}
 		)
 
 	def convert( value: String, hint: String, targetType: Type ) =
-		( if ( hint == MimeType.APPLICATION_JAVA_CLASS ) converters( targetType.toClass[AnyRef].getName )
+		( if ( hint == MimeType.APPLICATION_JAVA_CLASS ) converters( targetType.toClazz[AnyRef].getName )
 		else converters( hint ) )( value, targetType )
 
 	def registerParameterBinder( typeHint: String, pc: ParameterConvertor ): Unit = registerParameterBinder( typeHint, pc.convert( _, _ ) )
@@ -252,7 +252,7 @@ trait Service extends Logging {
 							wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tmethod: '" + restMethod.httpMethod + "',\n" +
+					"\t\t\t\tmethod: '" + restMethod.httpMethod()(0) + "',\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tasynchronous: false,\n" +
@@ -282,7 +282,7 @@ trait Service extends Logging {
 							wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tmethod: '" + restMethod.httpMethod + "',\n" +
+					"\t\t\t\tmethod: '" + restMethod.httpMethod()(0) + "',\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tonSuccess: function( response ) {\n" +

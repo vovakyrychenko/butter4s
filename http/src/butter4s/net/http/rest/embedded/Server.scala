@@ -28,7 +28,6 @@ import butter4s.lang.concurrent._
 import org.apache.http.params.{CoreConnectionPNames, CoreProtocolPNames, BasicHttpParams}
 import org.apache.http.impl.{DefaultHttpServerConnection, DefaultHttpResponseFactory, DefaultConnectionReuseStrategy}
 import org.apache.http.protocol.{HttpContext, HttpRequestHandler, BasicHttpContext, HttpService, HttpRequestHandlerRegistry, ResponseConnControl, BasicHttpProcessor, ResponseDate, ResponseServer, ResponseContent}
-import java.net.{URLDecoder, ServerSocket}
 import butter4s.lang._
 import org.apache.http.{HttpEntityEnclosingRequest, HttpResponse, HttpRequest}
 import org.apache.http.util.EntityUtils
@@ -37,12 +36,13 @@ import mutable.ArrayBuffer
 import org.apache.http.entity.{ContentProducer, EntityTemplate}
 import java.io.{ByteArrayInputStream, OutputStreamWriter, OutputStream, Writer}
 import butter4s.net.http.{HttpMethod, rest}
+import java.net.{InetAddress, URLDecoder, ServerSocket}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-class Server( port: Int ) extends Logging with Runnable {
-	private val serverSocket = new ServerSocket( port )
+class Server( port: Int, local: Boolean ) extends Logging with Runnable {
+	private val serverSocket = if ( local ) new ServerSocket( port, 0, InetAddress.getByName( "localhost" ) ) else new ServerSocket( port )
 	private val httpParams = new BasicHttpParams()
 	locally {
 		httpParams.setIntParameter( CoreConnectionPNames.SO_TIMEOUT, 5000 )
@@ -67,7 +67,7 @@ class Server( port: Int ) extends Logging with Runnable {
 	def add( name: String, service: rest.Service ) = registry.register( "/" + name + "/*", new EmbeddedServiceAdapter( name, service ) )
 
 	def run = {
-		log.info( "Ready to rock on " + serverSocket.getLocalPort )
+		log.info( "Ready to rock on " + serverSocket.getLocalSocketAddress )
 		while ( !Thread.interrupted ) {
 			val socket = serverSocket.accept
 			val connection = new DefaultHttpServerConnection() {

@@ -28,10 +28,10 @@ package butter4s
  */
 
 package object benchmark {
-	def benchmark( name: String, times: Int, code: => Unit ) =
+	def benchmark( name: String, times: Int )( code: => Unit ) =
 		println( "benchmarking " + name + ": " + times + " times, mean time " + ( 0 to times ).map( attempt => {
 			val start = System.nanoTime
 			code
 			System.nanoTime - start
-		} ).sum / times / 100 + " mcs" )
+		} ).sum / times / 1000 + " usec" )
 }

@@ -19,7 +19,7 @@
     <orderEntry type="library" name="Scala2.8" level="application" />
     <orderEntry type="module" module-name="reflect" />
     <orderEntry type="library" name="Servlet Runtime" level="project" />
-    <orderEntry type="module" module-name="bind" />
+    <orderEntry type="module" module-name="json" />
     <orderEntry type="module" module-name="logging" />
     <orderEntry type="library" name="Logging Runtime" level="project" />
     <orderEntry type="library" name="Development" level="project" />
