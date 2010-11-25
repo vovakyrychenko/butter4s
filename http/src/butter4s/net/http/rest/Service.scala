@@ -27,7 +27,7 @@ package butter4s.net.http.rest
 import butter4s.reflect._
 import butter4s.lang._
 import butter4s.io._
-import butter4s.bind.json.Binder
+import butter4s.json.Binder
 import butter4s.logging.Logging
 import java.lang.reflect.{ParameterizedType, InvocationTargetException}
 import java.io.{InputStream, Writer}
@@ -52,10 +52,13 @@ trait Context {
 }
 
 object Request {
-	private def compile( mapping: String ) = ( "^" + mapping.replaceAll( "\\{([^\\}]*)\\}", "([^/]+)" ) + "$" ).r
+	private val rxParamRx = "\\{([^\\:]+):([^\\)]+\\))\\}".r
+	private val simpleParamRx = "/\\{([^\\}]+)\\}".r
+
+	private[rest] def compile( mapping: String ) = ( "^" + simpleParamRx.replaceAllIn( rxParamRx.replaceAllIn( mapping, "$2" ), "/([^/]+)" ) + "$" ).r
 
 	def pathParam( mapping: String, requestLine: String, name: String ) =
-		"\\{([^\\}]*)\\}".r.findAllIn( mapping ).indexOf( "{" + name + "}" ) match {
+		simpleParamRx.findAllIn( rxParamRx.replaceAllIn( mapping, "{$1}" ) ).indexOf( "/{" + name + "}" ) match {
 			case -1 => None
 			case group => compile( mapping ).findFirstMatchIn( requestLine ).map( _.group( group + 1 ) )
 		}
@@ -252,7 +255,7 @@ trait Service extends Logging {
 							wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tmethod: '" + restMethod.httpMethod()(0) + "',\n" +
+					"\t\t\t\tmethod: '" + restMethod.httpMethod()( 0 ) + "',\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tasynchronous: false,\n" +
@@ -282,7 +285,7 @@ trait Service extends Logging {
 							wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tmethod: '" + restMethod.httpMethod()(0) + "',\n" +
+					"\t\t\t\tmethod: '" + restMethod.httpMethod()( 0 ) + "',\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tonSuccess: function( response ) {\n" +

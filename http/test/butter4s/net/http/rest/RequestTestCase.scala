@@ -32,12 +32,17 @@ import butter4s.net.http.HttpMethod
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 class RequestTestCase {
+	@Test def compile = {
+		assertEquals( "^/y/(\\d\\d\\d\\d)/([^/]+)/([^/]+)$", Request.compile( "/y/{year:(\\d\\d\\d\\d)}/{month}/{date}" ).toString )
+		assertEquals( "^/y/(\\d{4})/([^/]+)/([^/]+)$", Request.compile( "/y/{year:(\\d{4})}/{month}/{date}" ).toString )
+	}
+
 	@Test def pathParam = {
-		val mapping = "/y/{year}/{month}/{date}"
+		val mapping = "/y/{year:(\\d{4})}/{month}/{date}"
 		val path = "/y/2009/April/12"
-		assertEquals( "2009", Request.pathParam( mapping, path, "year" ).get );
-		assertEquals( "April", Request.pathParam( mapping, path, "month" ).get );
-		assertEquals( "12", Request.pathParam( mapping, path, "date" ).get );
+		assertEquals( Some( "2009" ), Request.pathParam( mapping, path, "year" ) );
+		assertEquals( Some( "April" ), Request.pathParam( mapping, path, "month" ) );
+		assertEquals( Some( "12" ), Request.pathParam( mapping, path, "date" ) );
 	}
 
 	@Test def methodMatches = {
@@ -45,6 +50,7 @@ class RequestTestCase {
 		assertEquals( "item", classOf[X].declaredMethod( Request.methodMatches( "/items/1", HttpMethod.POST, _ ) ).get.name )
 		assertEquals( "items", classOf[Y].declaredMethod( Request.methodMatches( "/", HttpMethod.POST, _ ) ).get.name )
 		assertEquals( "item", classOf[Y].declaredMethod( Request.methodMatches( "/1", HttpMethod.POST, _ ) ).get.name )
+		assertEquals( "api", classOf[Y].declaredMethod( Request.methodMatches( "/api", HttpMethod.POST, _ ) ).get.name )
 	}
 }
 
@@ -60,6 +66,10 @@ class Y {
 	@Method( path = "/" )
 	def items = List( 1, 2, 3 )
 
-	@Method( path = "/{item}" )
+	@Method
+	def api( i: Int ) = i
+
+	@Method( path = "/{item:(\\d+)}" )
 	def item( i: Int ) = i
+
 }

@@ -2,7 +2,7 @@ package butter4s.persistent
 
 
 import butter4s.fs.{Directory, File}
-import butter4s.bind.json.Binder
+import butter4s.json.Binder
 import scala.reflect.Manifest
 import butter4s.reflect._
 import butter4s.lang._
