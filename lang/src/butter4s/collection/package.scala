@@ -41,6 +41,8 @@ package object collection {
 
 	implicit def toRichTraversableOnce[A]( t: TraversableOnce[A] ) = new RichTraversableOnce( t )
 
+	private val chars = Array( '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' );
+
 	class RichArray[A]( ar: Array[A] ) {
 		import scala.collection.mutable
 		def toMultiArrayMap[K, V]( implicit ev: A <:< (K, V) ): MultiArrayMap[K, V] = {
@@ -48,6 +50,9 @@ package object collection {
 			for ( a <- ar ) r.addBinding( a )
 			r
 		}
+
+		def toHexString( implicit ev: A <:< Byte ) = ar.foldLeft( "" )( (r, b) => r + chars( ( b & 0xF0 ) >> 4 ) + chars( b & 0x0F ) )
+
 	}
 
 	implicit def toRichArray[A]( t: Array[A] ) = new RichArray( t )

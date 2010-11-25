@@ -33,29 +33,21 @@ import lang.Predicate.P
 package object lang {
 	implicit def identity[A]( a: A ) = a
 
-	implicit def bytes2string( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
+	implicit def toString( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
 
-	implicit def string2bytes( s: String ) = s.getBytes( "UTF-8" )
+	implicit def toByteArray( s: String ) = s.getBytes( "UTF-8" )
 
-	implicit def function2predicate[A]( f: A => Boolean ): P[A] = cast( f )
+	implicit def toPredicate[A]( f: A => Boolean ): P[A] = cast( f )
 
 	def not[A]( f: A => Boolean ) = f.not
 
 	def wrapIf( cond: Boolean )( left: => String, value: Any, right: => String ) = if ( cond ) left + value + right else "" + value
 
-	private val chars = Array( '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' );
-
-	class RichByteArray( a: Array[Byte] ) {
-		def toHexString = a.foldLeft( "" )( (r, b) => r + chars( ( b & 0xF0 ) >> 4 ) + chars( b & 0x0F ) )
-	}
-
-	implicit def byteArray2Rich( a: Array[Byte] ) = new RichByteArray( a )
-
 	class RichTuple2[A, B]( t: (A, B) ) {
 		def map[C, D]( f: ( (A, B) ) => (C, D) ) = f( t )
 	}
 
-	implicit def tuple22richTuple2[A, B]( t: (A, B) ) = new RichTuple2( t )
+	implicit def toRichTuple2[A, B]( t: (A, B) ) = new RichTuple2( t )
 
 	implicit def toRichTraversableOnce[A] = collection.toRichTraversableOnce[A] _
 
