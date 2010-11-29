@@ -34,6 +34,6 @@ object ServerTest extends Application {
 }
 
 object MathService extends rest.Service {
-	@rest.Method( produces = rest.MimeType.APPLICATION_JSON, path="/a/plus/b" )
+	@rest.Method( produces = rest.MimeType.APPLICATION_JSON )
 	def sum( @rest.Param( name = "a" ) a: Int, @rest.Param( name = "b" ) b: Int ) = a + b 
 }

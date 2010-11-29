@@ -57,7 +57,7 @@ object Request {
 
 	private[rest] def compile( mapping: String ) = ( "^" + simpleParamRx.replaceAllIn( rxParamRx.replaceAllIn( mapping, "$2" ), "/([^/]+)" ) + "$" ).r
 
-	private[rest] def filter( mapping ) = rxParamRx.replaceAllIn( mapping, "{$1}" )
+	private[rest] def filter( mapping: String ) = rxParamRx.replaceAllIn( mapping, "{$1}" )
 
 	def pathParam( mapping: String, requestLine: String, name: String ) =
 		simpleParamRx.findAllIn( filter( mapping ) ).indexOf( "/{" + name + "}" ) match {

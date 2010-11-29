@@ -98,31 +98,25 @@ class EmbeddedContext( val serviceName: String ) extends rest.Context {
 }
 
 object EmbeddedRequestAdapter {
-	def parseParams( params: String ): mutable.Map[String, ArrayBuffer[String]] =
-		if ( params != null && params != "" && params.indexOf( "\n" ) == params.lastIndexOf( "\n" ) && params.contains( "=" ) )
+	def params( req: HttpRequest ) = if ( req.getFirstHeader( "Content-Type" ).getValue.startsWith( "application/x-www-form-urlencoded" ) && req.isInstanceOf[HttpEntityEnclosingRequest] )
+		parse( req.getRequestLine.getUri.substringAfter( "?" ) ) ++ parse( EntityUtils.toString( req.asInstanceOf[HttpEntityEnclosingRequest].getEntity ) )
+	else parse( req.getRequestLine.getUri.substringAfter( "?" ) )
+
+	def parse( params: String ): mutable.Map[String, ArrayBuffer[String]] =
+		if ( params != null && params != "" )
 			params.split( "&" ).map( _.span( _ != '=' ).map {case (n, v) => (n, URLDecoder.decode( v.substring( 1 ), "UTF-8" ))} ).toMultiArrayMap
 		else mutable.Map[String, ArrayBuffer[String]]()
 }
 
 class EmbeddedRequestAdapter( req: HttpRequest, val context: rest.Context ) extends rest.Request {
-	import EmbeddedRequestAdapter._
-
-	private[embedded] lazy val params = parseParams( req.getRequestLine.getUri.substringAfter( "?" ) )
-	private[embedded] lazy val postParams = ( if ( req.getRequestLine.getMethod.toUpperCase == "POST" && req.isInstanceOf[HttpEntityEnclosingRequest] ) parseParams( EntityUtils.toString( req.asInstanceOf[HttpEntityEnclosingRequest].getEntity ) )
-	else mutable.Map[String, ArrayBuffer[String]]() )
+	private[embedded] lazy val params = EmbeddedRequestAdapter.params( req )
 
 	def parameters( name: String ) = params.get( name ) match {
-		case None => postParams.get( name ) match {
-			case None => Nil
-			case Some( array ) => array.toList
-		}
+		case None => Nil
 		case Some( array ) => array.toList
 	}
 
-	def parameter( name: String ) = parameters( name ) match {
-		case Nil => None
-		case x :: xs => Some( x )
-	}
+	def parameter( name: String ) = params.get( name ).map( b => if ( b.size > 0 ) b( 0 ) else null )
 
 	lazy val requestLine = req.getRequestLine.getUri.substringBefore( "?" ).substring( context.serviceLocation.length )
 

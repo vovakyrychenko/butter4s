@@ -33,9 +33,9 @@ import collection.mutable.ArrayBuffer
  */
 class EmbeddedRequestAdapterTestCase {
 	@Test def parseParams = {
-		assertEquals( Map( "a" -> ArrayBuffer( "1" ), "b" -> ArrayBuffer( "2 2" ) ), EmbeddedRequestAdapter.parseParams( "a=1&b=2+2" ) )
-		assertEquals( Map( "a" -> ArrayBuffer( "" ), "b" -> ArrayBuffer( "2" ) ), EmbeddedRequestAdapter.parseParams( "a=&b=2" ) )
-		assertEquals( Map( "a" -> ArrayBuffer( "1" ), "b" -> ArrayBuffer( "2" ) ), EmbeddedRequestAdapter.parseParams( "a=1&b=2&" ) )
-		assertEquals( Map( "a" -> ArrayBuffer( "1" ), "b" -> ArrayBuffer( "2", "3", "2" ) ), EmbeddedRequestAdapter.parseParams( "a=1&b=2&b=3&b=2" ) )
+		assertEquals( Map( "a" -> ArrayBuffer( "1" ), "b" -> ArrayBuffer( "2 2" ) ), EmbeddedRequestAdapter.parse( "a=1&b=2+2" ) )
+		assertEquals( Map( "a" -> ArrayBuffer( "" ), "b" -> ArrayBuffer( "2" ) ), EmbeddedRequestAdapter.parse( "a=&b=2" ) )
+		assertEquals( Map( "a" -> ArrayBuffer( "1" ), "b" -> ArrayBuffer( "2" ) ), EmbeddedRequestAdapter.parse( "a=1&b=2&" ) )
+		assertEquals( Map( "a" -> ArrayBuffer( "1" ), "b" -> ArrayBuffer( "2", "3", "2" ) ), EmbeddedRequestAdapter.parse( "a=1&b=2&b=3&b=2" ) )
 	}
 }
