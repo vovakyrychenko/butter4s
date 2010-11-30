@@ -21,14 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package butter4s.lang.reflect
 
 /**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+ * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-
-private[reflect] trait AnyRefMethods[C] {
-	val javaClass: java.lang.Class[C]
-	lazy val simpleName = javaClass.getSimpleName
-	lazy val name = javaClass.getName
+class PrimitiveType[V <: AnyVal] private[reflect]( val javaClass: java.lang.Class[V] ) extends AnyRefMethods[V] with Type[V] {
+	override def toString = "value " + name
 }
