@@ -13,7 +13,18 @@
 
 package butter4s.lang.reflect
 
+import annotation.tailrec
+
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-class ClassLike
+trait ClassLike[C] extends Type[C] {
+	lazy val fields = {
+		@tailrec def find( fields: List[Field], javaClass: Class[_] ): List[Field] =
+			if ( javaClass == null ) fields else find( fields ::: javaClass.getDeclaredFields.map( new Field( _ ) ).toList, javaClass.getSuperclass )
+
+		find( List[Field](), javaClass )
+	}
+
+	def field( name: String ) = fields.find( _.name == name )
+}

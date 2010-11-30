@@ -67,6 +67,7 @@ object Binder {
 	def marshalUnknown( value: Any ): String = value match {
 		case null => "null"
 		case v: String => "\"" + quote( v ) + "\""
+		case v: Char => "\"" + quote( v.toString ) + "\""
 		case v: Int => v.toString
 		case v: Long => v.toString
 		case v: Float => v.toString

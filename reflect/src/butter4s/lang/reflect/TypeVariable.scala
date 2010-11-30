@@ -16,4 +16,5 @@ package butter4s.lang.reflect
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-class TypeVariable
+class TypeVariable( variable: java.lang.reflect.TypeVariable[_] ) extends Type[Any] {
+}

@@ -27,6 +27,6 @@ package butter4s.lang.reflect
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-class PrimitiveType[V <: AnyVal] private[reflect]( val javaClass: java.lang.Class[V] ) extends AnyRefMethods[V] with Type[V] {
-	override def toString = "value " + name
+class PrimitiveType[V] private[reflect]( val javaClass: java.lang.Class[V] ) extends Type[V] {
+	override def toString = "primitive " + name
 }

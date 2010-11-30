@@ -60,6 +60,20 @@ class ReflectTestCase {
 		println( t )
 		assertNotNull( t )
 		assertTrue( t.isInstanceOf[EnumType[RetentionPolicy]] )
-		println( t.asInstanceOf[EnumType[RetentionPolicy]].values.toList )
+		println( t.asInstanceOf[EnumType[RetentionPolicy]].values )
+	}
+
+	@Test def testPrimitiveType = {
+		val t = typeOf[Int]
+		println( t )
+		assertNotNull( t )
+		assertTrue( t.isInstanceOf[PrimitiveType[Int]] )
+	}
+
+	@Test def testTypeOf = {
+		val t: Type[String] = "str".typeOf
+		println( t )
+		val ti: Type[AnyVal] = ( 1: AnyVal ).typeOf
+		println( ti )
 	}
 }

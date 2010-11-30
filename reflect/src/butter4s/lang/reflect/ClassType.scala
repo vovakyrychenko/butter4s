@@ -27,7 +27,7 @@ package butter4s.lang.reflect
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
-class ClassType[C] private[reflect]( val javaClass: java.lang.Class[C] ) extends AnyRefMethods[C] with Type {
+class ClassType[C] private[reflect]( val javaClass: java.lang.Class[C] ) extends ClassLike[C] {
 	def newInstance: C = javaClass.newInstance
 
 	override def toString = "class " + name

@@ -35,7 +35,7 @@ import java.lang.Class
 class Type( val impl: JType ) {
 	def resolveWith( actual: ParameterizedType ) = {
 		assert( impl.isInstanceOf[TypeVariable[_]], " should be type variable" )
-		actual.getActualTypeArguments()( actual.toClazz[AnyRef].getTypeParameters.findIndexOf( _.getName == impl.asInstanceOf[TypeVariable[_]].getName ) )
+		actual.getActualTypeArguments()( actual.toClazz[AnyRef].getTypeParameters.findIndexOf( _.getName == impl.asInstanceOf[TypeVariable[_]].getName ) )  
 	}
 
 	def toClazz[A]: Clazz[A] = impl match {

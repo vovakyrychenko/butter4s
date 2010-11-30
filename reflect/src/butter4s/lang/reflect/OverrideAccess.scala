@@ -16,4 +16,11 @@ package butter4s.lang.reflect
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-trait OverrideAccess 
+trait OverrideAccess[T] {
+	def setAccessible( a: Boolean ): Unit
+
+	def accessible[A]( code: => A ) = {
+		setAccessible( true )
+		code
+	}
+}

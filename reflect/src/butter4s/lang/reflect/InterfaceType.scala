@@ -27,6 +27,6 @@ package butter4s.lang.reflect
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
-class InterfaceType[I] private[reflect]( val javaClass: java.lang.Class[I] ) extends AnyRefMethods[I] with Type {
+class InterfaceType[I] private[reflect]( val javaClass: java.lang.Class[I] ) extends Type[I] {
 	override def toString = "interface " + name
 }

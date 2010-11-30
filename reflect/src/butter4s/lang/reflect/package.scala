@@ -23,20 +23,71 @@
  */
 package butter4s.lang
 
-import reflect.{EnumType, AnnotationType, Type, InterfaceType, ClassType}
+import reflect.{NativeParameterized, ManifestParameterized, PrimitiveType, EnumType, AnnotationType, Type, InterfaceType, ClassType}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
 package object reflect {
-	def typeOf[A: Manifest]: Type = {
-		val javaClass = manifest[A].erasure.asInstanceOf[Class[A]]
-		if ( javaClass.isAnnotation ) new AnnotationType[A]( javaClass )
-		else if ( javaClass.isEnum ) new EnumType[A]( javaClass )
-		else if ( javaClass.isInterface ) new InterfaceType[A]( javaClass )
-		else new ClassType[A]( javaClass )
+	class RichManifest[A]( m: Manifest[A] ) {
+		def asType: Type[A] = {
+			val javaClass = m.erasure.asInstanceOf[Class[A]]
+			if ( javaClass.isAnnotation ) new AnnotationType[A]( javaClass )
+			else if ( javaClass.isEnum ) new EnumType[A]( javaClass )
+			else if ( javaClass.isInterface ) new InterfaceType[A]( javaClass ) with ManifestParameterized[A] {val manifest = m}
+			else if ( javaClass.isPrimitive ) new PrimitiveType[A]( javaClass )
+			else new ClassType[A]( javaClass ) with ManifestParameterized[A] {val manifest = m}
+		}
 	}
 
-	def objectTypeOf( a: Any ): Type = null.asInstanceOf[Type]
+	implicit def toRichManifest[A]( m: Manifest[A] ) = new RichManifest[A]( m )
+
+	def typeOf[A: Manifest]: Type[A] = manifest[A].asType
+
+	class RichClass[A]( javaClass: Class[A] ) {
+		def asType: Type[A] =
+			if ( javaClass.isAnnotation ) new AnnotationType[A]( javaClass )
+			else if ( javaClass.isEnum ) new EnumType[A]( javaClass )
+			else if ( javaClass.isInterface ) new InterfaceType[A]( javaClass )
+			else if ( javaClass.isPrimitive ) new PrimitiveType[A]( javaClass )
+			else new ClassType[A]( javaClass )
+	}
+
+	implicit def toRichClass[A]( javaClass: Class[A] ) = new RichClass[A]( javaClass )
+
+	class RichJavaType( t: java.lang.reflect.Type ) {
+		def asType: Type[_] = {
+			if ( t.isInstanceOf[Class[_]] ) t.asInstanceOf[Class[_]].asType
+			else if ( t.isInstanceOf[java.lang.reflect.ParameterizedType] ) {
+				val ptype = t.asInstanceOf[java.lang.reflect.ParameterizedType]
+				val javaClass = ptype.getRawType.asInstanceOf[Class[Any]]
+				if ( javaClass.isInterface ) new InterfaceType[Any]( javaClass ) with NativeParameterized[Any] {val javaType = ptype}
+				else new ClassType[Any]( javaClass ) with NativeParameterized[Any] {val javaType = ptype}
+			} else throw new RuntimeException( "support for " + t + " is not implemented yet" )
+		}
+	}
+
+	implicit def toRichJavaType( javaType: java.lang.reflect.Type ) = new RichJavaType( javaType )
+
+	trait Typed[A] {
+		def typeOf: Type[A]
+	}
+
+	implicit def toTypedAnyRef[A <: AnyRef]( a: A ) = new Typed[A] {
+		def typeOf = a.getClass.asInstanceOf[Class[A]].asType
+	}
+
+	implicit def toTypedAnyVal[A <: AnyVal]( a: A ) = new Typed[A] {
+		def typeOf = a match {
+			case a: Int => new PrimitiveType[Int]( classOf[Int] ).asInstanceOf[Type[A]]
+			case a: Short => new PrimitiveType[Short]( classOf[Short] ).asInstanceOf[Type[A]]
+			case a: Long => new PrimitiveType[Long]( classOf[Long] ).asInstanceOf[Type[A]]
+			case a: Byte => new PrimitiveType[Byte]( classOf[Byte] ).asInstanceOf[Type[A]]
+			case a: Float => new PrimitiveType[Float]( classOf[Float] ).asInstanceOf[Type[A]]
+			case a: Double => new PrimitiveType[Double]( classOf[Double] ).asInstanceOf[Type[A]]
+			case a: Boolean => new PrimitiveType[Boolean]( classOf[Boolean] ).asInstanceOf[Type[A]]
+			case a: Char => new PrimitiveType[Char]( classOf[Char] ).asInstanceOf[Type[A]]
+		}
+	}
 }

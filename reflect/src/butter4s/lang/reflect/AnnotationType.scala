@@ -27,6 +27,6 @@ package butter4s.lang.reflect
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
-class AnnotationType[A]( val javaClass: java.lang.Class[A] ) extends AnyRefMethods[A] with Type {
+class AnnotationType[A]( val javaClass: java.lang.Class[A] ) extends Type[A] {
 	override def toString = "annotation " + name
 }

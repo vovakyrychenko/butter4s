@@ -34,6 +34,7 @@ import butter4s.logging.Logging
  */
 class BinderTestCase extends Logging {
 	Binder.registerUnmarshaller[TestEnum]( new Binder.EnumUnmarshaller( classOf[TestEnum] ) )
+	
 	@Test def bindEnum = {
 		assertBind( EnumBean( TestEnum.B ) )
 		assertBind( TestEnum.C )

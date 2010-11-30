@@ -27,7 +27,16 @@ package butter4s.lang.reflect
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
-trait Type {
-	val name: String
-	val simpleName: String
+trait Type[T] {
+	protected val javaClass: java.lang.Class[T]
+	lazy val simpleName = javaClass.getSimpleName
+	lazy val name = javaClass.getName
+	lazy val superclass = javaClass.getSuperclass
+	lazy val parameters = javaClass.getTypeParameters.map( new TypeVariable( _ ) ).toList
+
+	def <:<( another: Type[_] ) = javaClass.isAssignableFrom( another.javaClass )
+
+	def assignableFrom[A: Manifest] = javaClass.isAssignableFrom( manifest[A].erasure )
+
+
 }
