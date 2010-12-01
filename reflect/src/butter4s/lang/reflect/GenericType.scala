@@ -27,8 +27,8 @@ package butter4s.lang.reflect
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
-class EnumType[E]( val javaClass: java.lang.Class[E] ) extends Type[E] {
-	lazy val values = javaClass.getEnumConstants.toList
+trait GenericType
 
-	override def toString = "enum " + name
+class TypeVariable private[reflect]( javaTV: java.lang.reflect.TypeVariable[_] ) {
+	lazy val name = javaTV.getName
 }

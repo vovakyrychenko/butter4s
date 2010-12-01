@@ -25,7 +25,6 @@ package butter4s.lang.reflect
 
 import org.junit.{Test, Assert}
 import Assert._
-import java.io.Serializable
 import java.lang.annotation.RetentionPolicy
 
 /**
@@ -33,47 +32,35 @@ import java.lang.annotation.RetentionPolicy
  */
 
 class ReflectTestCase {
-	@Test def testClassType = {
-		val t = typeOf[String]
+	@Test def testParameterizedTypes = {
+		val t = typeOf[List[Map[RetentionPolicy, List[Int]]]]
+		assertEquals( "ClassType(List[InterfaceType(Map[EnumType(RetentionPolicy),ClassType(List[PrimitiveType(int)])])])", t.toString )
 		println( t )
-		assertNotNull( t )
-		assertTrue( t.isInstanceOf[ClassType[String]] )
-		assertNotNull( t.asInstanceOf[ClassType[String]].newInstance )
+		println( typeOf[Array[Int]] )
 	}
 
-	@Test def testInterfaceType = {
-		val t = typeOf[Serializable]
-		println( t )
-		assertNotNull( t )
-		assertTrue( t.isInstanceOf[InterfaceType[Serializable]] )
+	@Test def testEquals = {
+		assertTrue( typeOf[List[String]] == typeOf[List[String]] )
+		assertTrue( typeOf[List[String]] != typeOf[List[Int]] )
+		assertTrue( typeOf[List[String]].rawType == typeOf[List[Int]].rawType )
 	}
 
-	@Test def testAnnotationType = {
-		val t = typeOf[Test]
-		println( t )
-		assertNotNull( t )
-		assertTrue( t.isInstanceOf[AnnotationType[Test]] )
+	@Test def testAssignableFrom = {
+		assertTrue( typeOf[AnyRef].rawType <:< typeOf[String].rawType )
+		assertTrue( typeOf[String].rawType <:< typeOf[String].rawType )
+		assertFalse( typeOf[String].rawType <:< typeOf[AnyRef].rawType )
 	}
 
-	@Test def testEnumType = {
-		val t = typeOf[RetentionPolicy]
-		println( t )
-		assertNotNull( t )
-		assertTrue( t.isInstanceOf[EnumType[RetentionPolicy]] )
-		println( t.asInstanceOf[EnumType[RetentionPolicy]].values )
+	@Test def testFields = {
+		val ct = typeOf[X[String]].as[ClassType]
+		assertEquals( List( "x", "str", "t" ), ct.fields.map( _.name ) )
+		val f = ct.fields.find( _.name == "t" ).get
+		assertEquals( typeOf[String], f.actualType( ct ) )
 	}
+}
 
-	@Test def testPrimitiveType = {
-		val t = typeOf[Int]
-		println( t )
-		assertNotNull( t )
-		assertTrue( t.isInstanceOf[PrimitiveType[Int]] )
-	}
-
-	@Test def testTypeOf = {
-		val t: Type[String] = "str".typeOf
-		println( t )
-		val ti: Type[AnyVal] = ( 1: AnyVal ).typeOf
-		println( ti )
-	}
+class X[T <: AnyRef] {
+	var x = 1;
+	var str = "aaa";
+	var t: T = _
 }

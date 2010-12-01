@@ -26,17 +26,33 @@ package butter4s.lang.reflect
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
+object RawType {
+	def fromClass[A]( javaClass: Class[A] ) =
+		if ( javaClass.isAnnotation ) new RawAnnotationType[A]( javaClass )
+		else if ( javaClass.isEnum ) new RawEnumType[A]( javaClass )
+		else if ( javaClass.isArray ) new RawArrayType[A]( javaClass )
+		else if ( javaClass.isInterface ) new RawInterfaceType[A]( javaClass )
+		else if ( javaClass.isPrimitive ) new RawPrimitiveType[A]( javaClass )
+		else new RawClassType[A]( javaClass )
+}
 
-trait Type[T] {
-	protected val javaClass: java.lang.Class[T]
-	lazy val simpleName = javaClass.getSimpleName
-	lazy val name = javaClass.getName
-	lazy val superclass = javaClass.getSuperclass
+trait RawType[T] {
+	val javaClass: Class[T]
+
 	lazy val parameters = javaClass.getTypeParameters.map( new TypeVariable( _ ) ).toList
 
-	def <:<( another: Type[_] ) = javaClass.isAssignableFrom( another.javaClass )
+	def as[RT[x] <: RawType[x]] = this.asInstanceOf[RT[T]]
 
-	def assignableFrom[A: Manifest] = javaClass.isAssignableFrom( manifest[A].erasure )
+	def <:<( that: RawType[_] ) = javaClass.isAssignableFrom( that.javaClass )
 
+	override def hashCode = javaClass.##
 
+	override def equals( that: Any ) = that.isInstanceOf[RawType[_]] && javaClass == that.asInstanceOf[RawType[_]].javaClass
 }
+
+class RawClassType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]
+class RawInterfaceType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]
+class RawAnnotationType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]
+class RawEnumType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]
+class RawArrayType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]
+class RawPrimitiveType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]
