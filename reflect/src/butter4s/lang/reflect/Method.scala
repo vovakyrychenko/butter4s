@@ -70,16 +70,12 @@ class Parameter private[reflect]( protected val javaClass: Class[_], protected v
 
 	def annotatedWith[A <: java.lang.annotation.Annotation : Manifest] = annotations.exists( manifest[A].erasure isInstance _ )
 
-	/**
-	 * todo recursive resoving of type argument
-	 */
 	def actualType( owner: ParameterizedType[_] ): ParameterizedType[_] = nativeType match {
 		case t: java.lang.reflect.TypeVariable[_] => owner.actualTypeOf( t.getName )
 		case t: java.lang.reflect.ParameterizedType => ParameterizedType.fromParameterizedType( t )
 		case t: Class[_] => ParameterizedType.fromClass( t )
 		case x => throw new RuntimeException( x.getClass + " not yet supported" )
 	}
-
 
 	override def toString = "parameter " + nativeType
 }
