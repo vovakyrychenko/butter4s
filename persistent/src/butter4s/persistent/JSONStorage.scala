@@ -4,7 +4,7 @@ package butter4s.persistent
 import butter4s.fs.{Directory, File}
 import butter4s.json.Binder
 import scala.reflect.Manifest
-import butter4s.reflect._
+import butter4s.lang.reflect._
 import butter4s.lang._
 
 /**
@@ -31,9 +31,9 @@ trait JSONStorage[T <: AnyRef] {
 	}
 
 	def store( obj: T ) = synchronized {
-		obj.getClass.annotatedField[Key] match {
+		obj.typeOf.as[RawRefType].fields.find( _.annotatedWith[Key] ) match {
 			case Some( f ) => new File( location + "/" + f.get( obj ) + ".json" ).write( Binder.marshal( obj ) )
-			case None => throw new StorageException( obj.getClass + " has no field annotated with @Key" )
+			case None => throw new StorageException( obj.typeOf + " has no field annotated with @Key" )
 		}
 	}
 

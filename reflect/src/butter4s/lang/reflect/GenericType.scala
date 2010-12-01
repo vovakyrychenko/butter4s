@@ -29,6 +29,6 @@ package butter4s.lang.reflect
 
 trait GenericType
 
-class TypeVariable private[reflect]( javaTV: java.lang.reflect.TypeVariable[_] ) {
+class TypeVariable private[reflect]( protected val javaTV: java.lang.reflect.TypeVariable[_] ) {
 	lazy val name = javaTV.getName
 }

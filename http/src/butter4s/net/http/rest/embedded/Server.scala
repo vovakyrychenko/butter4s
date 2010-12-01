@@ -98,7 +98,7 @@ class EmbeddedContext( val serviceName: String ) extends rest.Context {
 }
 
 object EmbeddedRequestAdapter {
-	def params( req: HttpRequest ) = if ( req.getFirstHeader( "Content-Type" ).getValue.startsWith( "application/x-www-form-urlencoded" ) && req.isInstanceOf[HttpEntityEnclosingRequest] )
+	def params( req: HttpRequest ) = if ( req.getFirstHeader( "Content-Type" ) != null && req.getFirstHeader( "Content-Type" ).getValue.startsWith( "application/x-www-form-urlencoded" ) && req.isInstanceOf[HttpEntityEnclosingRequest] )
 		parse( req.getRequestLine.getUri.substringAfter( "?" ) ) ++ parse( EntityUtils.toString( req.asInstanceOf[HttpEntityEnclosingRequest].getEntity ) )
 	else parse( req.getRequestLine.getUri.substringAfter( "?" ) )
 

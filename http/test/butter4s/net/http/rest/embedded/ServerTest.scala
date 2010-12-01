@@ -24,16 +24,17 @@
 package butter4s.net.http.rest.embedded
 
 import butter4s.net.http.rest
+
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 object ServerTest extends Application {
-	val server = new Server( 9000, true )
+	val server = new Server( 8081, true )
 	server.add( "math", MathService )
 	server.run
 }
 
 object MathService extends rest.Service {
 	@rest.Method( produces = rest.MimeType.APPLICATION_JSON )
-	def sum( @rest.Param( name = "a" ) a: Int, @rest.Param( name = "b" ) b: Int ) = a + b 
+	def sum( @rest.Param( name = "a" ) a: Int, @rest.Param( name = "b" ) b: List[Int] ) = a + b.sum
 }

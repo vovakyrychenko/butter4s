@@ -24,7 +24,7 @@
 package butter4s.net.http.rest
 
 import org.junit.{Assert, Test}
-import butter4s.reflect._
+import butter4s.lang.reflect._
 import Assert.assertEquals
 import butter4s.net.http.HttpMethod
 
@@ -46,11 +46,11 @@ class RequestTestCase {
 	}
 
 	@Test def methodMatches = {
-		assertEquals( "items", classOf[X].declaredMethod( Request.methodMatches( "/items", HttpMethod.POST, _ ) ).get.name )
-		assertEquals( "item", classOf[X].declaredMethod( Request.methodMatches( "/items/1", HttpMethod.POST, _ ) ).get.name )
-		assertEquals( "items", classOf[Y].declaredMethod( Request.methodMatches( "/", HttpMethod.POST, _ ) ).get.name )
-		assertEquals( "item", classOf[Y].declaredMethod( Request.methodMatches( "/1", HttpMethod.POST, _ ) ).get.name )
-		assertEquals( "api", classOf[Y].declaredMethod( Request.methodMatches( "/api", HttpMethod.POST, _ ) ).get.name )
+		assertEquals( "items", typeOf[X].as[RefType].methods.find( Request.methodMatches( "/items", HttpMethod.POST, _ ) ).get.name )
+		assertEquals( "item", typeOf[X].as[RefType].methods.find( Request.methodMatches( "/items/1", HttpMethod.POST, _ ) ).get.name )
+		assertEquals( "items", typeOf[Y].as[RefType].methods.find( Request.methodMatches( "/", HttpMethod.POST, _ ) ).get.name )
+		assertEquals( "item", typeOf[Y].as[RefType].methods.find( Request.methodMatches( "/1", HttpMethod.POST, _ ) ).get.name )
+		assertEquals( "api", typeOf[Y].as[RefType].methods.find( Request.methodMatches( "/api", HttpMethod.POST, _ ) ).get.name )
 	}
 }
 
