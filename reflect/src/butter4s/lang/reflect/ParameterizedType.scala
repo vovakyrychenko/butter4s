@@ -31,29 +31,15 @@ import annotation.tailrec
  */
 
 object ParameterizedType {
-	def fromManifest[A]( m: Manifest[A] ): ParameterizedType[A] = {
-		val javaClass = m.erasure.asInstanceOf[Class[A]]
-		if ( javaClass.isAnnotation ) new AnnotationType[A]( new ManifestParameterizedType[A]( m ) )
-		else if ( javaClass.isEnum ) new EnumType[A]( new ManifestParameterizedType[A]( m ) )
-		else if ( javaClass.isArray ) new ArrayType[A]( new ManifestParameterizedType[A]( m ) )
-		else if ( javaClass.isInterface ) new InterfaceType[A]( new ManifestParameterizedType[A]( m ) )
-		else if ( javaClass.isPrimitive ) new PrimitiveType[A]( new ManifestParameterizedType[A]( m ) )
-		else new ClassType[A]( new ManifestParameterizedType[A]( m ) )
-	}
+	def fromManifest[A]( m: Manifest[A] ): ParameterizedType[A] = asParameterizedType( m.erasure.asInstanceOf[Class[A]], new ManifestParameterizedType[A]( m ) )
 
 	def fromTypeManifest[A]( m: TypeManifest[A] ): ParameterizedType[A] = fromClass( m.erasure.asInstanceOf[Class[A]] )
 
-	def fromClass[A]( javaClass: Class[A] ): ParameterizedType[A] = {
-		if ( javaClass.isAnnotation ) new AnnotationType[A]( new ClassParameterizedType[A]( javaClass ) )
-		else if ( javaClass.isEnum ) new EnumType[A]( new ClassParameterizedType[A]( javaClass ) )
-		else if ( javaClass.isArray ) new ArrayType[A]( new ClassParameterizedType[A]( javaClass ) )
-		else if ( javaClass.isInterface ) new InterfaceType[A]( new ClassParameterizedType[A]( javaClass ) )
-		else if ( javaClass.isPrimitive ) new PrimitiveType[A]( new ClassParameterizedType[A]( javaClass ) )
-		else new ClassType[A]( new ClassParameterizedType[A]( javaClass ) )
-	}
+	def fromClass[A]( javaClass: Class[A] ): ParameterizedType[A] = asParameterizedType( javaClass, new ClassParameterizedType[A]( javaClass ) )
 
-	def fromParameterizedType[A]( pt: java.lang.reflect.ParameterizedType ): ParameterizedType[A] = {
-		val javaClass = pt.getRawType.asInstanceOf[Class[A]]
+	def fromParameterizedType[A]( pt: java.lang.reflect.ParameterizedType ): ParameterizedType[A] = asParameterizedType( pt.getRawType.asInstanceOf[Class[A]], pt )
+
+	private def asParameterizedType[A]( javaClass: Class[A], pt: java.lang.reflect.ParameterizedType ): ParameterizedType[A] = {
 		if ( javaClass.isAnnotation ) new AnnotationType[A]( pt )
 		else if ( javaClass.isEnum ) new EnumType[A]( pt )
 		else if ( javaClass.isArray ) new ArrayType[A]( pt )

@@ -24,7 +24,7 @@ class ParserTestCase {
 		println( Parser.parse( YearJson.json ) )
 	}
 
-	@Test def performance: Unit = benchmark( "butter4s", 100 ) {
+	@Test def performance: Unit = benchmark( "parser", 500 ) {
 		Parser.parse( YearJson.json )
 	}
 }
