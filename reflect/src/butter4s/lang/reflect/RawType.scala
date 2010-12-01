@@ -23,6 +23,8 @@
  */
 package butter4s.lang.reflect
 
+import annotation.tailrec
+
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
@@ -50,9 +52,18 @@ trait RawType[T] {
 	override def equals( that: Any ) = that.isInstanceOf[RawType[_]] && javaClass == that.asInstanceOf[RawType[_]].javaClass
 }
 
-class RawClassType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]
-class RawInterfaceType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]
-class RawAnnotationType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]
-class RawEnumType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]
-class RawArrayType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]
+trait RawRefType[T] extends RawType[T] {
+	lazy val fields = {
+		@tailrec def find( fields: List[Field], clazz: Class[_] ): List[Field] =
+			if ( clazz == null ) fields else find( fields ::: clazz.getDeclaredFields.map( new Field( _ ) ).toList, clazz.getSuperclass )
+
+		find( List[Field](), javaClass )
+	}
+}
+
+class RawClassType[T] private[reflect]( val javaClass: Class[T] ) extends RawRefType[T]
+class RawInterfaceType[T] private[reflect]( val javaClass: Class[T] ) extends RawRefType[T]
+class RawAnnotationType[T] private[reflect]( val javaClass: Class[T] ) extends RawRefType[T]
+class RawEnumType[T] private[reflect]( val javaClass: Class[T] ) extends RawRefType[T]
+class RawArrayType[T] private[reflect]( val javaClass: Class[T] ) extends RawRefType[T]
 class RawPrimitiveType[T] private[reflect]( val javaClass: Class[T] ) extends RawType[T]

@@ -30,9 +30,21 @@ package butter4s.lang.reflect
 class Field private[reflect]( javaField: java.lang.reflect.Field ) {
 	lazy val name = javaField.getName
 
+	def accessible[A]( code: => A ) = {
+		javaField.setAccessible( true )
+		code
+	}
+
+	def set( obj: AnyRef, v: Any ) = javaField.set( obj, v )
+
+	def get( obj: AnyRef ) = javaField.get( obj )
+
+	def annotatedWith[A <: java.lang.annotation.Annotation : Manifest] = javaField.isAnnotationPresent( manifest[A].erasure.asInstanceOf[Class[java.lang.annotation.Annotation]] )
+
 	def actualType( p: ParameterizedType[_] ): ParameterizedType[_] = javaField.getGenericType match {
 		case t: java.lang.reflect.TypeVariable[_] => p.arguments( p.rawType.parameters.findIndexOf( _.name == t.getName ) )
 		case t: java.lang.reflect.ParameterizedType => ParameterizedType.fromParameterizedType( t )
-		case x => throw new RuntimeException( x + " not yet supported" )
+		case t: Class[_] => ParameterizedType.fromClass( t )
+		case x => throw new RuntimeException( x.getClass + " not yet supported" )
 	}
 }

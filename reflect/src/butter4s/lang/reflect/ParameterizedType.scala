@@ -87,6 +87,8 @@ abstract class TypeManifest[T] {
 
 	lazy val typeArguments = if ( erasure.isInstanceOf[java.lang.reflect.ParameterizedType] )
 		erasure.asInstanceOf[java.lang.reflect.ParameterizedType].getActualTypeArguments else Array[java.lang.reflect.Type]()
+
+	lazy val asParameterizedType = ParameterizedType.fromTypeManifest( this )
 }
 
 
@@ -143,4 +145,9 @@ class ArrayType[T] private[reflect]( val nativeType: java.lang.reflect.Parameter
 
 class EnumType[T] private[reflect]( val nativeType: java.lang.reflect.ParameterizedType ) extends RefType[T] {
 	lazy val values = nativeType.getRawType.asInstanceOf[Class[T]].getEnumConstants.toList
+
+	def valueOf( v: String ) = values.find( _.asInstanceOf[Enum[_]].name == v ) match {
+		case Some( e ) => e
+		case None => throw new IllegalArgumentException( "No enum const " + name + "." + v )
+	}
 }

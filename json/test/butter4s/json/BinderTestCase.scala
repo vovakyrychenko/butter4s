@@ -33,8 +33,6 @@ import butter4s.logging.Logging
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 class BinderTestCase extends Logging {
-	Binder.registerUnmarshaller[TestEnum]( new Binder.EnumUnmarshaller( classOf[TestEnum] ) )
-	
 	@Test def bindEnum = {
 		assertBind( EnumBean( TestEnum.B ) )
 		assertBind( TestEnum.C )
@@ -48,6 +46,7 @@ class BinderTestCase extends Logging {
 		assertBind( null )
 		assertBind( 10 )
 		assertBind( 10.3 )
+		assertBind( 'a' )
 	}
 
 	@Test def bindList = {
