@@ -46,11 +46,11 @@ class RequestTestCase {
 	}
 
 	@Test def methodMatches = {
-		assertEquals( "items", typeOf[X].as[RefType].methods.find( Request.methodMatches( "/items", HttpMethod.POST, _ ) ).get.name )
-		assertEquals( "item", typeOf[X].as[RefType].methods.find( Request.methodMatches( "/items/1", HttpMethod.POST, _ ) ).get.name )
-		assertEquals( "items", typeOf[Y].as[RefType].methods.find( Request.methodMatches( "/", HttpMethod.POST, _ ) ).get.name )
-		assertEquals( "item", typeOf[Y].as[RefType].methods.find( Request.methodMatches( "/1", HttpMethod.POST, _ ) ).get.name )
-		assertEquals( "api", typeOf[Y].as[RefType].methods.find( Request.methodMatches( "/api", HttpMethod.POST, _ ) ).get.name )
+		assertEquals( "items", typeOf[X].as[parameterized.ClassType].methods.find( Request.methodMatches( "/items", HttpMethod.POST, _ ) ).get.rawMethod.name )
+		assertEquals( "item", typeOf[X].as[parameterized.ClassType].methods.find( Request.methodMatches( "/items/1", HttpMethod.POST, _ ) ).get.rawMethod.name )
+		assertEquals( "items", typeOf[Y].as[parameterized.ClassType].methods.find( Request.methodMatches( "/", HttpMethod.POST, _ ) ).get.rawMethod.name )
+		assertEquals( "item", typeOf[Y].as[parameterized.ClassType].methods.find( Request.methodMatches( "/1", HttpMethod.POST, _ ) ).get.rawMethod.name )
+		assertEquals( "api", typeOf[Y].as[parameterized.ClassType].methods.find( Request.methodMatches( "/api", HttpMethod.POST, _ ) ).get.rawMethod.name )
 	}
 }
 

@@ -33,7 +33,7 @@ import butter4s.json.Parser.ParseException
  */
 
 object Binder {
-	private var marshallers = Map[ParameterizedType[_], AnyRef => String](
+	private var marshallers = Map[parameterized.Type[_], AnyRef => String](
 		typeOf[Enum[_]] -> ( value => "\"" + value.asInstanceOf[Enum[_]].name + "\"" )
 		)
 
@@ -41,22 +41,22 @@ object Binder {
 		def marshal( value: AnyRef ): String
 	}
 
-	def registerMarshaller( tm: TypeManifest[_], m: Marshaller ) = marshallers += tm.asParameterizedType -> ( value => m.marshal( value ) )
+	def registerMarshaller( tm: parameterized.TypeManifest[_], m: Marshaller ) = marshallers += tm.asParameterizedType -> ( value => m.marshal( value ) )
 
 	def registerMarshaller[A: Manifest]( m: AnyRef => String ) = marshallers += typeOf[A] -> m
 
 	trait Unmarshaller {
-		def unmarshal( t: ParameterizedType[_], value: Any ): Any
+		def unmarshal( t: parameterized.Type[_], value: Any ): Any
 	}
 
-	private var unmarshallers = Map[ParameterizedType[_], (ParameterizedType[_], Any) => Any](
+	private var unmarshallers = Map[parameterized.Type[_], (parameterized.Type[_], Any) => Any](
 		typeOf[Char] -> ( (_, value) => if ( value.asInstanceOf[String].length > 0 ) value.asInstanceOf[String]( 0 ) else 0: Char ),
-		typeOf[Enum[_]] -> ( (t, value) => t.as[EnumType].valueOf( value.asInstanceOf[String] ) )
+		typeOf[Enum[_]] -> ( (t, value) => t.as[parameterized.EnumType].rawType.valueOf( value.asInstanceOf[String] ) )
 		)
 
-	def registerUnmarshaller( tm: TypeManifest[_], u: Unmarshaller ) = unmarshallers += tm.asParameterizedType -> ( (t, value) => u.unmarshal( t, value ) )
+	def registerUnmarshaller( tm: parameterized.TypeManifest[_], u: Unmarshaller ) = unmarshallers += tm.asParameterizedType -> ( (t, value) => u.unmarshal( t, value ) )
 
-	def registerUnmarshaller[A: Manifest]( u: (ParameterizedType[_], Any) => Any ) = unmarshallers += typeOf[A] -> u
+	def registerUnmarshaller[A: Manifest]( u: (parameterized.Type[_], Any) => Any ) = unmarshallers += typeOf[A] -> u
 
 	def marshal( value: Any ): String = marshalUnknown( value )
 
@@ -81,17 +81,17 @@ object Binder {
 	def marshalList( l: List[_] ) = "[" + l.map( e => marshalUnknown( e ) ).mkString( "," ) + "]"
 
 	def marshalObject( obj: AnyRef ): String = "{" +
-			obj.typeOf.as[RawRefType].fields.filter( field => field.annotatedWith[XmlElement] || field.annotatedWith[XmlAttribute] )
+			obj.typeOf.as[raw.RefType].fields.filter( field => field.annotatedWith[XmlElement] || field.annotatedWith[XmlAttribute] )
 					.map( field => "\"" + field.name + "\":" + marshalUnknown( field.accessible {field.get( obj )} ) ).mkString( "," ) +
 			"}"
 
 	def unmarshal[A: Manifest]( input: String ): Option[A] = unmarshal( input, typeOf[A] ).asInstanceOf[Option[A]]
 
-	def unmarshal( input: String, targetType: ParameterizedType[_] ): Option[Any] = try Some( unmarshalUnknown( targetType, Parser.parse( input ) ) ) catch {
+	def unmarshal( input: String, targetType: parameterized.Type[_] ): Option[Any] = try Some( unmarshalUnknown( targetType, Parser.parse( input ) ) ) catch {
 		case e: ParseException => None
 	}
 
-	def unmarshalUnknown( targetType: ParameterizedType[_], value: Any ): Any =
+	def unmarshalUnknown( targetType: parameterized.Type[_], value: Any ): Any =
 		if ( value == null ) null
 		else unmarshallers.find {case (t, _) => t.rawType <:< targetType.rawType} match {
 			case Some( (_, unmarshal) ) => unmarshal( targetType, value )
@@ -100,13 +100,13 @@ object Binder {
 				case v: Boolean => v
 				case v: Double => unmarshalNumber( targetType, v )
 				case v: List[Any] => unmarshalList( targetType, v )
-				case v: Map[String, Any] => unmarshalObject( targetType, v )
+				case v: Map[String, Any] => unmarshalObject( targetType.asInstanceOf[parameterized.ClassType[AnyRef]], v )
 			}
 		}
 
-	def unmarshalList( targetType: ParameterizedType[_], list: List[Any] ) = list.map( unmarshalUnknown( targetType.arguments( 0 ), _ ) )
+	def unmarshalList( targetType: parameterized.Type[_], list: List[Any] ) = list.map( unmarshalUnknown( targetType.arguments( 0 ), _ ) )
 
-	def unmarshalNumber( targetType: ParameterizedType[_], v: Double ): AnyVal =
+	def unmarshalNumber( targetType: parameterized.Type[_], v: Double ): AnyVal =
 		if ( targetType.rawType <:< typeOf[Int].rawType ) v.toInt
 		else if ( targetType.rawType <:< typeOf[java.lang.Integer].rawType ) v.toInt
 		else if ( targetType.rawType <:< typeOf[Long].rawType ) v.toLong
@@ -118,12 +118,11 @@ object Binder {
 		else if ( targetType.rawType <:< typeOf[Float].rawType ) v.toFloat
 		else if ( targetType.rawType <:< typeOf[java.lang.Float].rawType ) v.toFloat else v
 
-	def unmarshalObject( targetType: ParameterizedType[_], map: Map[String, Any] ): AnyRef = {
-		val ct = targetType.as[ClassType]
-		val obj = ct.newInstance.asInstanceOf[AnyRef]
-		for ( (name, value) <- map ) ct.fields.find( _.name == name ) match {
-			case None => throw new UnmarshalException( "field " + name + " is not declared in " + ct )
-			case Some( field ) => field.accessible {field.set( obj, unmarshalUnknown( field.actualType( targetType ), value ) )}
+	def unmarshalObject( targetType: parameterized.ClassType[AnyRef], map: Map[String, Any] ): AnyRef = {
+		val obj = targetType.newInstance
+		for ( (name, value) <- map ) targetType.fields.find( _.rawField.name == name ) match {
+			case None => throw new UnmarshalException( "field " + name + " is not declared in " + targetType )
+			case Some( field ) => field.rawField.accessible {field.rawField.set( obj, unmarshalUnknown( field.actualType, value ) )}
 		}
 		obj
 	}

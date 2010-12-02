@@ -65,11 +65,11 @@ object Request {
 			case group => compile( mapping ).findFirstMatchIn( requestLine ).map( _.group( group + 1 ) )
 		}
 
-	def methodMatches( requestLine: String, httpMethod: HttpMethod, m: butter4s.lang.reflect.Method ) = m.annotation[Method] match {
+	def methodMatches( requestLine: String, httpMethod: HttpMethod, m: butter4s.lang.reflect.parameterized.Method[_, _] ) = m.rawMethod.annotation[Method] match {
 		case None => false
 		case Some( restMethod ) =>
 			if ( !restMethod.httpMethod.contains( httpMethod ) ) false
-			else if ( restMethod.path == Method.Constants.DEFAULT ) requestLine == "/" + m.name
+			else if ( restMethod.path == Method.Constants.DEFAULT ) requestLine == "/" + m.rawMethod.name
 			else compile( restMethod.path ).findFirstMatchIn( requestLine ).isDefined
 	}
 }
@@ -153,7 +153,7 @@ trait ContentProducer {
 }
 
 trait ParameterConvertor {
-	def convert( value: String, t: ParameterizedType[_] )
+	def convert( value: String, t: parameterized.Type[_] )
 }
 
 object Service {
@@ -166,32 +166,32 @@ object Service {
 
 	def registerContentProducer( contentType: String, produce: Any => String ) = producers += contentType -> produce
 
-	private var converters = Map[String, (String, ParameterizedType[_]) => Any](
-		typeOf[Int].name -> {(s, _) => s.toInt},
-		typeOf[java.lang.Integer].name -> {(s, _) => s.toInt},
-		typeOf[Long].name -> {(s, _) => s.toLong},
-		typeOf[java.lang.Long].name -> {(s, _) => s.toLong},
-		typeOf[Short].name -> ( (s, _) => s.toShort ),
-		typeOf[java.lang.Short].name -> ( (s, _) => s.toShort ),
-		typeOf[Byte].name -> ( (s, _) => s.toByte ),
-		typeOf[java.lang.Byte].name -> ( (s, _) => s.toByte ),
-		typeOf[Float].name -> ( (s, _) => s.toFloat ),
-		typeOf[java.lang.Float].name -> ( (s, _) => s.toFloat ),
-		typeOf[Double].name -> ( (s, _) => s.toDouble ),
-		typeOf[java.lang.Double].name -> {(s, _) => s.toDouble},
-		typeOf[Boolean].name -> {(s, _) => s.toBoolean},
-		typeOf[java.lang.Boolean].name -> {(s, _) => s.toBoolean},
-		typeOf[String].name -> {(s, _) => s},
+	private var converters = Map[String, (String, parameterized.Type[_]) => Any](
+		typeOf[Int].rawType.name -> {(s, _) => s.toInt},
+		typeOf[java.lang.Integer].rawType.name -> {(s, _) => s.toInt},
+		typeOf[Long].rawType.name -> {(s, _) => s.toLong},
+		typeOf[java.lang.Long].rawType.name -> {(s, _) => s.toLong},
+		typeOf[Short].rawType.name -> ( (s, _) => s.toShort ),
+		typeOf[java.lang.Short].rawType.name -> ( (s, _) => s.toShort ),
+		typeOf[Byte].rawType.name -> ( (s, _) => s.toByte ),
+		typeOf[java.lang.Byte].rawType.name -> ( (s, _) => s.toByte ),
+		typeOf[Float].rawType.name -> ( (s, _) => s.toFloat ),
+		typeOf[java.lang.Float].rawType.name -> ( (s, _) => s.toFloat ),
+		typeOf[Double].rawType.name -> ( (s, _) => s.toDouble ),
+		typeOf[java.lang.Double].rawType.name -> {(s, _) => s.toDouble},
+		typeOf[Boolean].rawType.name -> {(s, _) => s.toBoolean},
+		typeOf[java.lang.Boolean].rawType.name -> {(s, _) => s.toBoolean},
+		typeOf[String].rawType.name -> {(s, _) => s},
 		MimeType.APPLICATION_JSON -> {(s, t) => Binder.unmarshal( s, t ).get}
 		)
 
-	def convert( value: String, hint: String, targetType: ParameterizedType[_] ) =
-		( if ( hint == MimeType.APPLICATION_JAVA_CLASS ) converters( targetType.name )
+	def convert( value: String, hint: String, targetType: parameterized.Type[_] ) =
+		( if ( hint == MimeType.APPLICATION_JAVA_CLASS ) converters( targetType.rawType.name )
 		else converters( hint ) )( value, targetType )
 
 	def registerParameterBinder( typeHint: String, pc: ParameterConvertor ): Unit = registerParameterBinder( typeHint, pc.convert( _, _ ) )
 
-	def registerParameterBinder( typeHint: String, convert: (String, ParameterizedType[_]) => Any ) = converters += typeHint -> convert
+	def registerParameterBinder( typeHint: String, convert: (String, parameterized.Type[_]) => Any ) = converters += typeHint -> convert
 
 }
 
@@ -200,19 +200,19 @@ trait Service extends Logging {
 
 	def perform( request: Request, response: Response ) = log.time( request.toString, try {
 		log.debug( "invoke " + request )
-		this.typeOf.as[RawClassType].methods.find( Request.methodMatches( request.requestLine, request.httpMethod, _ ) ) match {
+		parameterized.Type.fromClass( getClass.asInstanceOf[Class[Service]] ).as[parameterized.ClassType].methods.find( Request.methodMatches( request.requestLine, request.httpMethod, _ ) ) match {
 			case None => respond( NOT_FOUND, request.requestLine + " is unbound" )
-			case Some( method ) => method.annotation[Method] match {
-				case None => respond( NOT_FOUND, method.name + " is not exposed" )
+			case Some( method ) => method.rawMethod.annotation[Method] match {
+				case None => respond( NOT_FOUND, method.rawMethod.name + " is not exposed" )
 				case Some( restMethod ) =>
-					val result = method.invoke( this, method.parameters.map( p => {
+					val result = method.rawMethod.invoke( this, method.parameters.map( p => {
 						log.debug( p )
-						if ( p.rawType <:< typeOf[Request].rawType ) request
-						else if ( p.rawType <:< typeOf[List[_]].rawType ) p.annotation[Param] match {
-							case None => respond( INTERNAL_SERVER_ERROR, "method parameter of type " + p.rawType + " is not annotated properly" )
-							case Some( restParam ) => request.parameters( restParam.name ).map( Service.convert( _, restParam.typeHint, p.actualType( ParameterizedType.fromClass( getClass ) ).arguments( 0 ) ) )
-						} else p.annotation[Param] match {
-							case None => respond( INTERNAL_SERVER_ERROR, "method parameter of type " + p.rawType + " is not annotated properly" )
+						if ( p.rawParameter.rawType <:< typeOf[Request].rawType ) request
+						else if ( p.rawParameter.rawType <:< typeOf[List[_]].rawType ) p.rawParameter.annotation[Param] match {
+							case None => respond( INTERNAL_SERVER_ERROR, "method parameter of type " + p.rawParameter.rawType + " is not annotated properly" )
+							case Some( restParam ) => request.parameters( restParam.name ).map( Service.convert( _, restParam.typeHint, p.actualType.arguments( 0 ) ) )
+						} else p.rawParameter.annotation[Param] match {
+							case None => respond( INTERNAL_SERVER_ERROR, "method parameter of type " + p.rawParameter.rawType + " is not annotated properly" )
 							case Some( restParam ) => Service.convert( ( restParam.from match {
 								case Param.From.BODY => Some( request.body.readAs[String] )
 								case Param.From.QUERY => request.parameter( restParam.name )
@@ -220,7 +220,7 @@ trait Service extends Logging {
 							} ) match {
 								case None => respond( BAD_REQUEST, restParam.name + " is required" )
 								case Some( value ) => value
-							}, restParam.typeHint, p.actualType( ParameterizedType.fromClass( getClass ) ) ).asInstanceOf[AnyRef]
+							}, restParam.typeHint, p.actualType ).asInstanceOf[AnyRef]
 						}
 					} ): _ * )
 
@@ -240,19 +240,19 @@ trait Service extends Logging {
 	} )
 
 	@Method( produces = "text/javascript" )
-	def api( request: Request ) = "var api_" + request.context.serviceName + " = { \n\tsync: {\n" + this.typeOf.as[RawClassType].methods.view.filter( m => m.annotatedWith[Method] && m.name != "api" ).map(
+	def api( request: Request ) = "var api_" + request.context.serviceName + " = { \n\tsync: {\n" + parameterized.Type.fromClass( getClass ).as[parameterized.ClassType].methods.view.filter( m => m.rawMethod.annotatedWith[Method] && m.rawMethod.name != "api" ).map(
 		method => {
-			val params = method.parameters.view.filter( _.annotatedWith[Param] )
-			val (queryParams, pathParams) = params.partition( _.annotation[Param].get.from == Param.From.QUERY )
-			val restMethod = method.annotation[Method].get
-			"\t\t" + method.name + ": function (" + params.map( _.annotation[Param].get.name ).mkString( "," ) + ") {\n" +
+			val params = method.parameters.view.filter( _.rawParameter.annotatedWith[Param] )
+			val (queryParams, pathParams) = params.partition( _.rawParameter.annotation[Param].get.from == Param.From.QUERY )
+			val restMethod = method.rawMethod.annotation[Method].get
+			"\t\t" + method.rawMethod.name + ": function (" + params.map( _.rawParameter.annotation[Param].get.name ).mkString( "," ) + ") {\n" +
 					"\t\t\tvar result, error;\n" +
 					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
-					( if ( restMethod.path == Method.Constants.DEFAULT ) "/" + method.name else Request.filter( restMethod.path ).replaceAll( "\\{", "'+" ).replaceAll( "\\}", "+'" ) ) + "', {\n" +
+					( if ( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter( restMethod.path ).replaceAll( "\\{", "'+" ).replaceAll( "\\}", "+'" ) ) + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
 					queryParams.map( p => {
-						val restParam = p.annotation[Param].get
-						"\t\t\t\t\t" + restParam.name + ":" + ( if ( p.rawType <:< typeOf[List[_]].rawType ) restParam.name + ".collect(function(x){return " +
+						val restParam = p.rawParameter.annotation[Param].get
+						"\t\t\t\t\t" + restParam.name + ":" + ( if ( p.rawParameter.rawType <:< typeOf[List[_]].rawType ) restParam.name + ".collect(function(x){return " +
 								wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", "x", ")" ) + ";})" else
 							wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +
@@ -271,18 +271,18 @@ trait Service extends Logging {
 					"\t\t\t});\n" +
 					"\t\t\tif (error) throw error; else return result;\n" +
 					"\t\t}"
-		} ).mkString( ",\n\n" ) + "\n\t},\n\tasync: {\n" + this.typeOf.as[RawClassType].methods.view.filter( m => m.annotatedWith[Method] && m.name != "api" ).map(
+		} ).mkString( ",\n\n" ) + "\n\t},\n\tasync: {\n" + parameterized.Type.fromClass( getClass ).as[parameterized.ClassType].methods.view.filter( m => m.rawMethod.annotatedWith[Method] && m.rawMethod.name != "api" ).map(
 		method => {
-			val params = method.parameters.view.filter( _.annotatedWith[Param] )
-			val (queryParams, pathParams) = params.partition( _.annotation[Param].get.from == Param.From.QUERY )
-			val restMethod = method.annotation[Method].get
-			"\t\t" + method.name + ": function (" + ( params.map( _.annotation[Param].get.name ) :+ "succeed" :+ "failed" ).mkString( "," ) + ") {\n" +
+			val params = method.parameters.view.filter( _.rawParameter.annotatedWith[Param] )
+			val (queryParams, pathParams) = params.partition( _.rawParameter.annotation[Param].get.from == Param.From.QUERY )
+			val restMethod = method.rawMethod.annotation[Method].get
+			"\t\t" + method.rawMethod.name + ": function (" + ( params.map( _.rawParameter.annotation[Param].get.name ) :+ "succeed" :+ "failed" ).mkString( "," ) + ") {\n" +
 					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
-					( if ( restMethod.path == Method.Constants.DEFAULT ) "/" + method.name else Request.filter( restMethod.path ).replaceAll( "\\{", "'+" ).replaceAll( "\\}", "+'" ) ) + "', {\n" +
+					( if ( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter( restMethod.path ).replaceAll( "\\{", "'+" ).replaceAll( "\\}", "+'" ) ) + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
 					queryParams.map( p => {
-						val restParam = p.annotation[Param].get
-						"\t\t\t\t\t" + restParam.name + ":" + ( if ( p.rawType <:< typeOf[List[_]].rawType ) restParam.name + ".collect(function(x){return " +
+						val restParam = p.rawParameter.annotation[Param].get
+						"\t\t\t\t\t" + restParam.name + ":" + ( if ( p.rawParameter.rawType <:< typeOf[List[_]].rawType ) restParam.name + ".collect(function(x){return " +
 								wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", "x", ")" ) + ";})" else
 							wrapIf( restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS )( "Object.toJSON(", restParam.name, ")" ) )
 					} ).mkString( ",\n" ) + "\n" +

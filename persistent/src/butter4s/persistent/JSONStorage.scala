@@ -31,7 +31,7 @@ trait JSONStorage[T <: AnyRef] {
 	}
 
 	def store( obj: T ) = synchronized {
-		obj.typeOf.as[RawRefType].fields.find( _.annotatedWith[Key] ) match {
+		obj.typeOf.as[raw.RefType].fields.find( _.annotatedWith[Key] ) match {
 			case Some( f ) => new File( location + "/" + f.get( obj ) + ".json" ).write( Binder.marshal( obj ) )
 			case None => throw new StorageException( obj.typeOf + " has no field annotated with @Key" )
 		}

@@ -21,25 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package butter4s.lang.reflect
+package butter4s.lang.reflect.parameterized
 
-import annotation.tailrec
-
+import butter4s.lang.reflect.raw
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
-object ParameterizedType {
-	def fromManifest[A]( m: Manifest[A] ): ParameterizedType[A] = asParameterizedType( m.erasure.asInstanceOf[Class[A]], new ManifestParameterizedType[A]( m ) )
+object Type {
+	def fromManifest[A]( m: Manifest[A] ): Type[A] = asParameterizedType( m.erasure.asInstanceOf[Class[A]], new ManifestParameterizedType[A]( m ) )
 
-	def fromTypeManifest[A]( m: TypeManifest[A] ): ParameterizedType[A] = fromClass( m.erasure.asInstanceOf[Class[A]] )
+	def fromTypeManifest[A]( m: TypeManifest[A] ): Type[A] = fromClass( m.erasure.asInstanceOf[Class[A]] )
 
-	def fromClass[A]( javaClass: Class[A] ): ParameterizedType[A] = asParameterizedType( javaClass, new ClassParameterizedType[A]( javaClass ) )
+	def fromClass[A]( javaClass: Class[A] ): Type[A] = asParameterizedType( javaClass, new ClassParameterizedType[A]( javaClass ) )
 
-	def fromParameterizedType[A]( pt: java.lang.reflect.ParameterizedType ): ParameterizedType[A] = asParameterizedType( pt.getRawType.asInstanceOf[Class[A]], pt )
+	def fromParameterizedType[A]( pt: java.lang.reflect.ParameterizedType ): Type[A] = asParameterizedType( pt.getRawType.asInstanceOf[Class[A]], pt )
 
-	private def asParameterizedType[A]( javaClass: Class[A], pt: java.lang.reflect.ParameterizedType ): ParameterizedType[A] = {
+	private def asParameterizedType[A]( javaClass: Class[A], pt: java.lang.reflect.ParameterizedType ): Type[A] = {
 		if ( javaClass.isAnnotation ) new AnnotationType[A]( pt )
 		else if ( javaClass.isEnum ) new EnumType[A]( pt )
 		else if ( javaClass.isArray ) new ArrayType[A]( pt )
@@ -48,7 +47,7 @@ object ParameterizedType {
 		else new ClassType[A]( pt )
 	}
 
-	def fromType( t: java.lang.reflect.Type ): ParameterizedType[_] = t match {
+	def fromType( t: java.lang.reflect.Type ): Type[_] = t match {
 		case t: java.lang.reflect.ParameterizedType => fromParameterizedType( t )
 		case t: Class[_] => fromClass( t )
 	}
@@ -74,11 +73,13 @@ abstract class TypeManifest[T] {
 	lazy val typeArguments = if ( erasure.isInstanceOf[java.lang.reflect.ParameterizedType] )
 		erasure.asInstanceOf[java.lang.reflect.ParameterizedType].getActualTypeArguments else Array[java.lang.reflect.Type]()
 
-	lazy val asParameterizedType = ParameterizedType.fromTypeManifest( this )
+	lazy val asParameterizedType = Type.fromTypeManifest( this )
 }
 
 
 private class ClassParameterizedType[A]( javaClass: Class[A] ) extends java.lang.reflect.ParameterizedType {
+	assume( javaClass.getTypeParameters.length == 0, javaClass + " is not suitable as parameterized.Type since it has type parameters" )
+
 	def getOwnerType = javaClass.getDeclaringClass
 
 	def getRawType = javaClass
@@ -86,54 +87,51 @@ private class ClassParameterizedType[A]( javaClass: Class[A] ) extends java.lang
 	def getActualTypeArguments = Array.empty[java.lang.reflect.Type]
 }
 
-trait ParameterizedType[T] {
+trait Type[T] {
 	protected val nativeType: java.lang.reflect.ParameterizedType
-	private lazy val javaClass = nativeType.getRawType.asInstanceOf[Class[T]]
-	lazy val name = javaClass.getName
-	lazy val simpleName = javaClass.getSimpleName
-	lazy val arguments: List[ParameterizedType[_]] = nativeType.getActualTypeArguments.map( t => ParameterizedType.fromType( t ) ).toList
-	lazy val rawType = RawType.fromClass( javaClass )
+	protected lazy val javaClass = nativeType.getRawType.asInstanceOf[Class[T]]
+	lazy val arguments: List[Type[_]] = nativeType.getActualTypeArguments.map( t => Type.fromType( t ) ).toList
+	type RawTypeType <: raw.Type[T]
+	lazy val rawType: RawTypeType = raw.Type.fromClass( javaClass ).asInstanceOf[RawTypeType]
 
-	def as[PT[x] <: ParameterizedType[x]] = this.asInstanceOf[PT[T]]
+	def as[PT[x] <: Type[x]] = this.asInstanceOf[PT[T]]
 
 	/**
-	 *  todo recursive resolving of type argument
+	 *  todo deep resolving of type argument
 	 */
 	def actualTypeOf( parameter: String ) = arguments( rawType.parameters.findIndexOf( _.name == parameter ) )
 
 	override def hashCode = rawType.## * 41 + arguments.##
 
-	override def equals( that: Any ) = that.isInstanceOf[ParameterizedType[_]] && rawType == that.asInstanceOf[ParameterizedType[_]].rawType && arguments == that.asInstanceOf[ParameterizedType[_]].arguments
+	override def equals( that: Any ) = that.isInstanceOf[Type[_]] && rawType == that.asInstanceOf[Type[_]].rawType && arguments == that.asInstanceOf[Type[_]].arguments
 
-	override def toString = getClass.getSimpleName + "(" + simpleName + ( if ( arguments.length > 0 ) "[" + arguments.mkString( "," ) + "]" else "" ) + ")"
+	override def toString = getClass.getSimpleName + "(" + rawType.simpleName + ( if ( arguments.length > 0 ) "[" + arguments.mkString( "," ) + "]" else "" ) + ")"
 }
 
-trait RefType[T] extends ParameterizedType[T] {
-	lazy val fields = RawType.fields( nativeType.getRawType.asInstanceOf[Class[_]] )
-	lazy val methods = RawType.methods( nativeType.getRawType.asInstanceOf[Class[_]] )
-}
 
-class ClassType[T] private[reflect]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends RefType[T] {
+class ClassType[T] private[parameterized]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends RefType[T] {
+	type RawTypeType = raw.ClassType[T]
+
 	def newInstance = nativeType.getRawType.asInstanceOf[Class[T]].newInstance
 }
 
-class InterfaceType[T] private[reflect]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends RefType[T] {
+class InterfaceType[T] private[parameterized]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends RefType[T] {
+	type RawTypeType = raw.InterfaceType[T]
 }
 
-class AnnotationType[T] private[reflect]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends RefType[T] {
+class AnnotationType[T] private[parameterized]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends RefType[T] {
+	type RawTypeType = raw.AnnotationType[T]
 }
 
-class PrimitiveType[T] private[reflect]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends ParameterizedType[T] {
+class PrimitiveType[T] private[parameterized]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends Type[T] {
+	type RawTypeType = raw.PrimitiveType[T]
 }
 
-class ArrayType[T] private[reflect]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends RefType[T] {
+class ArrayType[T] private[parameterized]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends RefType[T] {
+	type RawTypeType = raw.ArrayType[T]
 }
 
-class EnumType[T] private[reflect]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends RefType[T] {
-	lazy val values = nativeType.getRawType.asInstanceOf[Class[T]].getEnumConstants.toList
-
-	def valueOf( v: String ) = values.find( _.asInstanceOf[Enum[_]].name == v ) match {
-		case Some( e ) => e
-		case None => throw new IllegalArgumentException( "No enum const " + name + "." + v )
-	}
+class EnumType[T] private[parameterized]( protected val nativeType: java.lang.reflect.ParameterizedType ) extends RefType[T] {
+	type RawTypeType = raw.EnumType[T]
 }
+

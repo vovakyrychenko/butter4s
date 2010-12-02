@@ -23,32 +23,32 @@
  */
 package butter4s.lang
 
-import reflect.{RawType, ParameterizedType}
+import reflect.{raw, parameterized}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 package object reflect {
-	def typeOf[A: Manifest] = ParameterizedType.fromManifest( manifest[A] )
+	def typeOf[A: Manifest] = parameterized.Type.fromManifest( manifest[A] )
 
 	trait RichAny[T] {
-		def typeOf: RawType[T]
+		def typeOf: raw.Type[T]
 	}
 
-	implicit def toRichAnyRef[T]( a: AnyRef ) = new RichAny[T] {
-		def typeOf = RawType.fromClass( a.getClass.asInstanceOf[Class[T]] )
+	implicit def toRichAnyRef[T <: AnyRef]( a: T ) = new RichAny[T] {
+		def typeOf = raw.Type.fromClass( a.getClass.asInstanceOf[Class[T]] )
 	}
 
-	implicit def toRichAnyVal[T]( a: AnyVal ) = new RichAny[T] {
+	implicit def toRichAnyVal[T <: AnyVal]( a: T ) = new RichAny[T] {
 		def typeOf = a match {
-			case _: Int => RawType.fromClass( classOf[Int] ).asInstanceOf[RawType[T]]
-			case _: Long => RawType.fromClass( classOf[Long] ).asInstanceOf[RawType[T]]
-			case _: Short => RawType.fromClass( classOf[Short] ).asInstanceOf[RawType[T]]
-			case _: Byte => RawType.fromClass( classOf[Byte] ).asInstanceOf[RawType[T]]
-			case _: Double => RawType.fromClass( classOf[Double] ).asInstanceOf[RawType[T]]
-			case _: Float => RawType.fromClass( classOf[Float] ).asInstanceOf[RawType[T]]
-			case _: Boolean => RawType.fromClass( classOf[Boolean] ).asInstanceOf[RawType[T]]
-			case _: Char => RawType.fromClass( classOf[Char] ).asInstanceOf[RawType[T]]
+			case _: Int => raw.Type.fromClass( classOf[Int] ).asInstanceOf[raw.Type[T]]
+			case _: Long => raw.Type.fromClass( classOf[Long] ).asInstanceOf[raw.Type[T]]
+			case _: Short => raw.Type.fromClass( classOf[Short] ).asInstanceOf[raw.Type[T]]
+			case _: Byte => raw.Type.fromClass( classOf[Byte] ).asInstanceOf[raw.Type[T]]
+			case _: Double => raw.Type.fromClass( classOf[Double] ).asInstanceOf[raw.Type[T]]
+			case _: Float => raw.Type.fromClass( classOf[Float] ).asInstanceOf[raw.Type[T]]
+			case _: Boolean => raw.Type.fromClass( classOf[Boolean] ).asInstanceOf[raw.Type[T]]
+			case _: Char => raw.Type.fromClass( classOf[Char] ).asInstanceOf[raw.Type[T]]
 		}
 	}
 
