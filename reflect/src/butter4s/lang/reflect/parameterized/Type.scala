@@ -32,8 +32,6 @@ import butter4s.lang.reflect.raw
 object Type {
 	def fromManifest[A]( m: Manifest[A] ): Type[A] = asParameterizedType( m.erasure.asInstanceOf[Class[A]], new ManifestParameterizedType[A]( m ) )
 
-	def fromTypeManifest[A]( m: TypeManifest[A] ): Type[A] = fromClass( m.erasure.asInstanceOf[Class[A]] )
-
 	def fromClass[A]( javaClass: Class[A] ): Type[A] = asParameterizedType( javaClass, new ClassParameterizedType[A]( javaClass ) )
 
 	def fromParameterizedType[A]( pt: java.lang.reflect.ParameterizedType ): Type[A] = asParameterizedType( pt.getRawType.asInstanceOf[Class[A]], pt )
@@ -67,13 +65,19 @@ private class ManifestParameterizedType[A]( m: Manifest[A] ) extends java.lang.r
 /**
  * for java compatibility
  */
-abstract class TypeManifest[T] {
-	lazy val erasure = getClass.getGenericSuperclass.asInstanceOf[java.lang.reflect.ParameterizedType].getActualTypeArguments()( 0 ).asInstanceOf[Class[_]]
+abstract class TypeManifest[T] extends java.lang.reflect.ParameterizedType {
+	private val impl = getClass.getGenericSuperclass.asInstanceOf[java.lang.reflect.ParameterizedType].getActualTypeArguments()( 0 )
 
-	lazy val typeArguments = if ( erasure.isInstanceOf[java.lang.reflect.ParameterizedType] )
-		erasure.asInstanceOf[java.lang.reflect.ParameterizedType].getActualTypeArguments else Array[java.lang.reflect.Type]()
+	def getOwnerType = if ( impl.isInstanceOf[java.lang.reflect.ParameterizedType] )
+		impl.asInstanceOf[java.lang.reflect.ParameterizedType].getOwnerType else impl.asInstanceOf[Class[_]].getDeclaringClass
 
-	lazy val asParameterizedType = Type.fromTypeManifest( this )
+	def getRawType = if ( impl.isInstanceOf[java.lang.reflect.ParameterizedType] )
+		impl.asInstanceOf[java.lang.reflect.ParameterizedType].getRawType else impl.asInstanceOf[Class[_]]
+
+	def getActualTypeArguments = if ( impl.isInstanceOf[java.lang.reflect.ParameterizedType] )
+		impl.asInstanceOf[java.lang.reflect.ParameterizedType].getActualTypeArguments else Array[java.lang.reflect.Type]()
+
+	lazy val asParameterizedType = Type.fromParameterizedType[T]( this )
 }
 
 

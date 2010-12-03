@@ -23,7 +23,7 @@ trait JSONStorage[T <: AnyRef] {
 	}
 
 	def list( implicit m: Manifest[T] ): List[T] = synchronized {
-		new Directory( location ).filter( _.name.endsWith( ".json" ) ).map( f => Binder.unmarshal[T]( f.asInstanceOf[File].read ).get )
+		new Directory( location ).filter( _.name.endsWith( ".json" ) ).map( f => Binder.unmarshal[T]( f.asInstanceOf[File].read[String] ).get )
 	}
 
 	def listRaw: List[String] = synchronized {

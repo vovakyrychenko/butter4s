@@ -27,6 +27,7 @@ import butter4s.lang.reflect._
 import javax.xml.bind.annotation.{XmlElement, XmlAttribute}
 import javax.xml.bind.UnmarshalException
 import butter4s.json.Parser.ParseException
+import parameterized.TypeManifest
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
@@ -86,6 +87,8 @@ object Binder {
 			"}"
 
 	def unmarshal[A: Manifest]( input: String ): Option[A] = unmarshal( input, typeOf[A] ).asInstanceOf[Option[A]]
+
+	def unmarshal[A]( input: String, tm: TypeManifest[A] ): Option[A] = unmarshal( input, tm.asParameterizedType ).asInstanceOf[Option[A]]
 
 	def unmarshal( input: String, targetType: parameterized.Type[_] ): Option[Any] = try Some( unmarshalUnknown( targetType, Parser.parse( input ) ) ) catch {
 		case e: ParseException => None

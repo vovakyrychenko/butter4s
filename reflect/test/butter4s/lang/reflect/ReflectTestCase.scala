@@ -40,6 +40,16 @@ class ReflectTestCase {
 		println( typeOf[Array[Int]] )
 	}
 
+	@Test def testTypeManifest = {
+		val t = new parameterized.TypeManifest[List[Map[RetentionPolicy, List[Int]]]] {}.asParameterizedType
+		assertEquals( "ClassType(List[InterfaceType(Map[EnumType(RetentionPolicy),ClassType(List[ClassType(Integer)])])])", t.toString )
+		println( t )
+		val t2 = new parameterized.TypeManifest[String] {}.asParameterizedType
+		assertEquals( "ClassType(String)", t2.toString )
+		println( t2 )
+	}
+
+
 	@Test def testEquals = {
 		assertTrue( typeOf[List[String]] == typeOf[List[String]] )
 		assertTrue( typeOf[List[String]] != typeOf[List[Int]] )
