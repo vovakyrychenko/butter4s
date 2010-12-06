@@ -56,6 +56,8 @@ package object lang {
 	class RichString( s: String ) {
 		def substringAfter( delimiter: String ) = if ( s.contains( delimiter ) ) s.substring( s.indexOf( delimiter ) + 1 ) else ""
 
+		def substringAfterLast( delimiter: String ) = if ( s.contains( delimiter ) ) s.substring( s.lastIndexOf( delimiter ) + 1 ) else ""
+
 		def substringBefore( delimiter: String ) = if ( s.contains( delimiter ) ) s.substring( 0, s.indexOf( delimiter ) ) else s
 	}
 

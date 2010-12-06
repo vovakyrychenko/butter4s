@@ -27,22 +27,18 @@ import butter4s.logging.Logging
 import butter4s.lang.concurrent._
 import org.apache.http.params.{CoreConnectionPNames, CoreProtocolPNames, BasicHttpParams}
 import org.apache.http.impl.{DefaultHttpServerConnection, DefaultHttpResponseFactory, DefaultConnectionReuseStrategy}
-import org.apache.http.protocol.{HttpContext, HttpRequestHandler, BasicHttpContext, HttpService, HttpRequestHandlerRegistry, ResponseConnControl, BasicHttpProcessor, ResponseDate, ResponseServer, ResponseContent}
-import butter4s.lang._
-import org.apache.http.{HttpEntityEnclosingRequest, HttpResponse, HttpRequest}
-import org.apache.http.util.EntityUtils
-import collection.mutable
-import mutable.ArrayBuffer
-import org.apache.http.entity.{ContentProducer, EntityTemplate}
-import java.io.{ByteArrayInputStream, OutputStreamWriter, OutputStream, Writer}
-import butter4s.net.http.{HttpMethod, rest}
-import java.net.{InetAddress, URLDecoder, ServerSocket}
+import butter4s.net.http.rest
+import org.apache.http.protocol.{HttpRequestHandler, BasicHttpContext, HttpService, HttpRequestHandlerRegistry, ResponseConnControl, BasicHttpProcessor, ResponseDate, ResponseServer, ResponseContent}
+import java.net.{SocketTimeoutException, InetAddress, ServerSocket}
 
 /**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
+ * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 class Server( port: Int, local: Boolean ) extends Logging with Runnable {
 	private val serverSocket = if ( local ) new ServerSocket( port, 0, InetAddress.getByName( "localhost" ) ) else new ServerSocket( port )
+	locally {
+		serverSocket.setSoTimeout( 200 )
+	}
 	private val httpParams = new BasicHttpParams()
 	locally {
 		httpParams.setIntParameter( CoreConnectionPNames.SO_TIMEOUT, 5000 )
@@ -64,11 +60,14 @@ class Server( port: Int, local: Boolean ) extends Logging with Runnable {
 		setHandlerResolver( registry );
 	}
 
+	registry.register( "/htdocs/*", ClasspathHtdocsHandler )
+
 	def add( name: String, service: rest.Service ) = registry.register( "/" + name + "/*", new EmbeddedServiceAdapter( name, service ) )
+
 
 	def run = {
 		log.info( "Ready to rock on " + serverSocket.getLocalSocketAddress )
-		while ( !Thread.interrupted ) {
+		while ( !Thread.interrupted ) try {
 			val socket = serverSocket.accept
 			val connection = new DefaultHttpServerConnection() {
 				bind( socket, httpParams )
@@ -84,72 +83,13 @@ class Server( port: Int, local: Boolean ) extends Logging with Runnable {
 					connection.shutdown
 				}
 			}
+		} catch {
+			case e: SocketTimeoutException =>
 		}
 	}
-}
 
-class EmbeddedServiceAdapter( name: String, service: rest.Service ) extends HttpRequestHandler {
-	def handle( req: HttpRequest, resp: HttpResponse, ctx: HttpContext ) =
-		service.perform( new EmbeddedRequestAdapter( req, new EmbeddedContext( name ) ), new EmbeddedResponseAdapter( resp ) )
-}
+	def stop = {
 
-class EmbeddedContext( val serviceName: String ) extends rest.Context {
-	val serviceLocation = "/" + serviceName
-}
-
-object EmbeddedRequestAdapter {
-	def params( req: HttpRequest ) = if ( req.getFirstHeader( "Content-Type" ) != null && req.getFirstHeader( "Content-Type" ).getValue.startsWith( "application/x-www-form-urlencoded" ) && req.isInstanceOf[HttpEntityEnclosingRequest] )
-		parse( req.getRequestLine.getUri.substringAfter( "?" ) ) ++ parse( EntityUtils.toString( req.asInstanceOf[HttpEntityEnclosingRequest].getEntity ) )
-	else parse( req.getRequestLine.getUri.substringAfter( "?" ) )
-
-	def parse( params: String ): mutable.Map[String, ArrayBuffer[String]] =
-		if ( params != null && params != "" )
-			params.split( "&" ).map( _.span( _ != '=' ).map {case (n, v) => (n, URLDecoder.decode( v.substring( 1 ), "UTF-8" ))} ).toMultiArrayMap
-		else mutable.Map[String, ArrayBuffer[String]]()
-}
-
-class EmbeddedRequestAdapter( req: HttpRequest, val context: rest.Context ) extends rest.Request {
-	private[embedded] lazy val params = EmbeddedRequestAdapter.params( req )
-
-	def parameters( name: String ) = params.get( name ) match {
-		case None => Nil
-		case Some( array ) => array.toList
 	}
-
-	def parameter( name: String ) = params.get( name ).map( b => if ( b.size > 0 ) b( 0 ) else null )
-
-	lazy val requestLine = req.getRequestLine.getUri.substringBefore( "?" ).substring( context.serviceLocation.length )
-
-	lazy val httpMethod = HttpMethod.valueOf( req.getRequestLine.getMethod.toUpperCase )
-
-	lazy val session = new EmbeddedSession
-
-	lazy val body = if ( req.isInstanceOf[HttpEntityEnclosingRequest] ) req.asInstanceOf[HttpEntityEnclosingRequest].getEntity.getContent else new ByteArrayInputStream( Array[Byte]() )
 }
 
-class EmbeddedResponseAdapter( resp: HttpResponse ) extends rest.Response {
-	def status( code: Int, message: String ) = {
-		resp.setStatusCode( code )
-		resp.setReasonPhrase( message )
-	}
-
-	def content( contentType: String, what: ( => Writer ) => Unit ) = resp.setEntity( new EntityTemplate( new ContentProducer() {
-		def writeTo( out: OutputStream ) = {
-			val writer = new OutputStreamWriter( out )
-			what( writer )
-			writer.flush
-		}
-	} ) {
-		setContentType( contentType )
-	} )
-}
-
-class EmbeddedSession extends rest.Session {
-	private var attributes = Map[String, Any]()
-
-	def invalidate = attributes = Map[String, Any]()
-
-	def update( name: String, value: Any ) = attributes += name -> value
-
-	def apply[A]( name: String ) = attributes.get( name ).asInstanceOf[Option[A]]
-}

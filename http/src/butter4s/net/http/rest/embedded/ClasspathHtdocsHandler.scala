@@ -23,17 +23,26 @@
  */
 package butter4s.net.http.rest.embedded
 
-import butter4s.net.http.rest
-/**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
- */
-object ServerTest extends Application {
-	val server = new Server( 8081, true )
-	server.add( "math", MathService )
-	server.run
-}
+import org.apache.http.{HttpResponse, HttpRequest}
+import org.apache.http.protocol.{HttpContext, HttpRequestHandler}
+import butter4s.lang._
+import butter4s.io._
+import org.apache.http.entity.ByteArrayEntity
+import javax.activation.MimetypesFileTypeMap
 
-object MathService extends rest.Service {
-	@rest.Method( produces = rest.MimeType.APPLICATION_JSON )
-	def sum( @rest.Param( name = "a" ) a: Int, @rest.Param( name = "b" ) b: List[Int], @rest.Param( name = "c" ) c: Option[Int] ) = a + b.sum + ( if ( c.isDefined ) c.get else 0 )
+/**
+ * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
+ */
+
+object ClasspathHtdocsHandler extends HttpRequestHandler {
+	val mimeTypes = new MimetypesFileTypeMap()
+
+	def handle( req: HttpRequest, resp: HttpResponse, context: HttpContext ) = {
+		getClass.getResourceAsStream( "/WEB-INF" + req.getRequestLine.getUri ) match {
+			case null => resp.setStatusCode( 404 )
+			case is => resp.setEntity( new ByteArrayEntity( readAs[Array[Byte]]( is ) ) {
+				setContentType( mimeTypes.getContentType( req.getRequestLine.getUri ) )
+			} )
+		}
+	}
 }

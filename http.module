@@ -22,11 +22,12 @@
 #  THE SOFTWARE.
 #
 
-module.name = butter4s-rest
-module.title = butter4s-test
+module.name = butter4s-http
+module.title = butter4s-http
 module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
 module.libraries = servlet/lib/*.jar, http/lib/*.jar, logging/lib/*.jar, dist/*.jar
 module.sources = http/src
+module.resources = http/src/**/*.js,http/src/META-INF/mime.types
 module.use.scala = true
 module.use.java = true
 #module.scala.home = ${scala.2.8.home}

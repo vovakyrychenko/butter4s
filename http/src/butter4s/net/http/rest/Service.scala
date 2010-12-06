@@ -211,6 +211,9 @@ trait Service extends Logging {
 						else if ( p.rawParameter.rawType <:< typeOf[List[_]].rawType ) p.rawParameter.annotation[Param] match {
 							case None => respond( INTERNAL_SERVER_ERROR, "method parameter of type " + p.rawParameter.rawType + " is not annotated properly" )
 							case Some( restParam ) => request.parameters( restParam.name ).map( Service.convert( _, restParam.typeHint, p.actualType.arguments( 0 ) ) )
+						} else if ( p.rawParameter.rawType <:< typeOf[Option[_]].rawType ) p.rawParameter.annotation[Param] match {
+							case None => respond( INTERNAL_SERVER_ERROR, "method parameter of type " + p.rawParameter.rawType + " is not annotated properly" )
+							case Some( restParam ) => request.parameter( restParam.name ).map( Service.convert( _, restParam.typeHint, p.actualType.arguments( 0 ) ) )
 						} else p.rawParameter.annotation[Param] match {
 							case None => respond( INTERNAL_SERVER_ERROR, "method parameter of type " + p.rawParameter.rawType + " is not annotated properly" )
 							case Some( restParam ) => Service.convert( ( restParam.from match {
