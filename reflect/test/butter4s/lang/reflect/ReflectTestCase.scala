@@ -26,7 +26,6 @@ package butter4s.lang.reflect
 import org.junit.{Test, Assert}
 import Assert._
 import java.lang.annotation.RetentionPolicy
-import parameterized.EnumType
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
@@ -68,7 +67,7 @@ class ReflectTestCase {
 
 		val f = ct.fields.find( _.rawField.name == "t" ).get
 
-		val dt: parameterized.ClassType[X[String]] = f.declaringType
+		val dt: parameterized.ClassType[X[String]] = f.ownerType
 
 		assertEquals( typeOf[String], f.actualType )
 
@@ -77,7 +76,7 @@ class ReflectTestCase {
 	}
 
 	@Test def testEnum = {
-		assertEquals( RetentionPolicy.values.toList, typeOf[RetentionPolicy].as[EnumType].rawType.values )
+		assertEquals( RetentionPolicy.values.toList, typeOf[RetentionPolicy].as[parameterized.EnumType].rawType.values )
 	}
 }
 

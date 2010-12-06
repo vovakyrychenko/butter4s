@@ -47,11 +47,11 @@ trait RefType[T] extends Type[T] {
 }
 
 
-class Field[DT <: RefType[T], T] private[parameterized]( protected val javaField: java.lang.reflect.Field, val declaringType: DT ) {
+class Field[OT <: RefType[T], T] private[parameterized]( protected val javaField: java.lang.reflect.Field, val ownerType: OT ) {
 	lazy val rawField = new raw.Field[T]( javaField )
 
 	lazy val actualType: Type[_] = javaField.getGenericType match {
-		case t: java.lang.reflect.TypeVariable[_] => declaringType.actualTypeOf( t.getName )
+		case t: java.lang.reflect.TypeVariable[_] => ownerType.actualTypeOf( t.getName )
 		case t: java.lang.reflect.ParameterizedType => Type.fromParameterizedType( t )
 		case t: Class[_] => Type.fromClass( t )
 		case x => throw new RuntimeException( x.getClass + " not yet supported" )
@@ -60,7 +60,7 @@ class Field[DT <: RefType[T], T] private[parameterized]( protected val javaField
 	override def toString = "field " + rawField.name
 }
 
-class Method[DT <: RefType[T], T] private[parameterized]( protected val javaMethod: java.lang.reflect.Method, val declaringType: DT ) {
+class Method[OT <: RefType[T], T] private[parameterized]( protected val javaMethod: java.lang.reflect.Method, val ownerType: OT ) {
 	lazy val rawMethod = new raw.Method[T]( javaMethod )
 
 	lazy val parameters = javaMethod.getParameterTypes.zip( javaMethod.getGenericParameterTypes ).zip( javaMethod.getParameterAnnotations ).map {case ((cls, t), as) => new Parameter( cls, t, as.toList, Method.this )}
@@ -68,11 +68,11 @@ class Method[DT <: RefType[T], T] private[parameterized]( protected val javaMeth
 	override def toString = "method " + rawMethod.name
 }
 
-class Parameter[DT <: RefType[T], T] private[parameterized]( protected val javaClass: Class[_], protected val nativeType: java.lang.reflect.Type, val annotations: List[java.lang.annotation.Annotation], val declaringMethod: Method[DT, T] ) {
+class Parameter[OT <: RefType[T], T] private[parameterized]( protected val javaClass: Class[_], protected val nativeType: java.lang.reflect.Type, val annotations: List[java.lang.annotation.Annotation], val ownerMethod: Method[OT, T] ) {
 	lazy val rawParameter = new raw.Parameter( javaClass, annotations )
 
 	lazy val actualType: Type[_] = nativeType match {
-		case t: java.lang.reflect.TypeVariable[_] => declaringMethod.declaringType.actualTypeOf( t.getName )
+		case t: java.lang.reflect.TypeVariable[_] => ownerMethod.ownerType.actualTypeOf( t.getName )
 		case t: java.lang.reflect.ParameterizedType => Type.fromParameterizedType( t )
 		case t: Class[_] => Type.fromClass( t )
 		case x => throw new RuntimeException( x.getClass + " not yet supported" )
