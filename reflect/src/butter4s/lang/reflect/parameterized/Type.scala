@@ -96,7 +96,7 @@ trait Type[T] {
 	protected lazy val javaClass = nativeType.getRawType.asInstanceOf[Class[T]]
 	lazy val arguments: List[Type[_]] = nativeType.getActualTypeArguments.map( t => Type.fromType( t ) ).toList
 	type RawTypeType <: raw.Type[T]
-	lazy val rawType: RawTypeType = raw.Type.fromClass( javaClass ).asInstanceOf[RawTypeType]
+	lazy val rawType: RawTypeType = raw.Type.fromClass[T]( javaClass ).asInstanceOf[RawTypeType]
 
 	def as[PT[x] <: Type[x]] = this.asInstanceOf[PT[T]]
 
