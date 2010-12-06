@@ -29,10 +29,10 @@ import org.apache.http.{HttpEntityEnclosingRequest, HttpResponse, HttpRequest}
 import org.apache.http.util.EntityUtils
 import collection.mutable
 import mutable.ArrayBuffer
-import org.apache.http.entity.{ContentProducer, EntityTemplate}
-import java.io.{ByteArrayInputStream, OutputStreamWriter, OutputStream, Writer}
 import butter4s.net.http.{HttpMethod, rest}
 import java.net.URLDecoder
+import org.apache.http.entity.{ByteArrayEntity, ContentProducer, EntityTemplate}
+import java.io.{ByteArrayOutputStream, ByteArrayInputStream, OutputStreamWriter, OutputStream, Writer}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
@@ -82,14 +82,14 @@ class EmbeddedResponseAdapter( resp: HttpResponse ) extends rest.Response {
 		resp.setReasonPhrase( message )
 	}
 
-	def content( contentType: String, what: ( => Writer ) => Unit ) = resp.setEntity( new EntityTemplate( new ContentProducer() {
+	def content( ct: String, what: ( => Writer ) => Unit ) = resp.setEntity( new EntityTemplate( new ContentProducer() {
 		def writeTo( out: OutputStream ) = {
 			val writer = new OutputStreamWriter( out )
 			what( writer )
 			writer.flush
 		}
 	} ) {
-		setContentType( contentType )
+		setContentType( ct )
 	} )
 }
 
