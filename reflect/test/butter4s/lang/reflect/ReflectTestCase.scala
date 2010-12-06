@@ -59,7 +59,8 @@ class ReflectTestCase {
 		assertTrue( typeOf[AnyRef].rawType <:< typeOf[String].rawType )
 		assertTrue( typeOf[String].rawType <:< typeOf[String].rawType )
 		assertFalse( typeOf[String].rawType <:< typeOf[AnyRef].rawType )
-	}
+		assertTrue( typeOf[Enum[_]].rawType <:< typeOf[RetentionPolicy].rawType )
+		}
 
 	@Test def testFields = {
 		var ct = typeOf[X[String]].as[parameterized.ClassType]

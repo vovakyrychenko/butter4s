@@ -33,10 +33,6 @@ import lang.Predicate.P
 package object lang {
 	implicit def identity[A]( a: A ) = a
 
-	implicit def toString( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
-
-	implicit def toByteArray( s: String ) = s.getBytes( "UTF-8" )
-
 	implicit def toPredicate[A]( f: A => Boolean ): P[A] = cast( f )
 
 	def not[A]( f: A => Boolean ) = f.not

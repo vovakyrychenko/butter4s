@@ -2,7 +2,7 @@ package butter4s.fs
 
 import java.io.FileOutputStream
 import butter4s.io._
-import collection.{IterableLike, TraversableLike}
+import collection.TraversableLike
 import collection.mutable.{Builder, ListBuffer}
 
 /**
@@ -23,11 +23,11 @@ abstract class FsNode( _path: String ) {
 
 
 class File( path: String ) extends FsNode( path ) {
-	def read[R]( implicit toResult: Array[Byte] => R ) = using( new FileInputStream( path ) ) {_.readAs[R]}
+	def read[R]( implicit convert: FromArrayConversion[R] ) = using( new FileInputStream( path ) ) {_.readAs[R]}
 
-	def write[P]( content: P )( implicit fromParam: P => Array[Byte] ) = {
+	def write[P]( content: P )( implicit convert: ToArrayConversion[P] ) = {
 		parent.create
-		using( new FileOutputStream( impl ) ) {copy( content, _ )}
+		using( new FileOutputStream( impl ) ) {_.write( content )}
 	}
 
 	def length = impl.length

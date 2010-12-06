@@ -24,6 +24,8 @@
 package butter4s.net.http.rest.embedded
 
 import butter4s.net.http.rest
+import java.lang.annotation.RetentionPolicy
+
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
@@ -35,5 +37,8 @@ object ServerTest extends Application {
 
 object MathService extends rest.Service {
 	@rest.Method( produces = rest.MimeType.APPLICATION_JSON )
-	def sum( @rest.Param( name = "a" ) a: Int, @rest.Param( name = "b" ) b: List[Int], @rest.Param( name = "c" ) c: Option[Int] ) = a + b.sum + ( if ( c.isDefined ) c.get else 0 )
+	def sum( @rest.Param( name = "a" ) a: Int, @rest.Param( name = "b" ) b: List[Int], @rest.Param( name = "c" ) c: Option[Int], @rest.Param( name = "rp" ) rp: Option[RetentionPolicy] ) = {
+		println( rp )
+		a + b.sum + ( if ( c.isDefined ) c.get else 0 )
+	}
 }

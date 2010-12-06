@@ -166,32 +166,38 @@ object Service {
 
 	def registerContentProducer( contentType: String, produce: Any => String ) = producers += contentType -> produce
 
-	private var converters = Map[String, (String, parameterized.Type[_]) => Any](
-		typeOf[Int].rawType.name -> {(s, _) => s.toInt},
-		typeOf[java.lang.Integer].rawType.name -> {(s, _) => s.toInt},
-		typeOf[Long].rawType.name -> {(s, _) => s.toLong},
-		typeOf[java.lang.Long].rawType.name -> {(s, _) => s.toLong},
-		typeOf[Short].rawType.name -> ( (s, _) => s.toShort ),
-		typeOf[java.lang.Short].rawType.name -> ( (s, _) => s.toShort ),
-		typeOf[Byte].rawType.name -> ( (s, _) => s.toByte ),
-		typeOf[java.lang.Byte].rawType.name -> ( (s, _) => s.toByte ),
-		typeOf[Float].rawType.name -> ( (s, _) => s.toFloat ),
-		typeOf[java.lang.Float].rawType.name -> ( (s, _) => s.toFloat ),
-		typeOf[Double].rawType.name -> ( (s, _) => s.toDouble ),
-		typeOf[java.lang.Double].rawType.name -> {(s, _) => s.toDouble},
-		typeOf[Boolean].rawType.name -> {(s, _) => s.toBoolean},
-		typeOf[java.lang.Boolean].rawType.name -> {(s, _) => s.toBoolean},
-		typeOf[String].rawType.name -> {(s, _) => s},
+	private var converters = Map[raw.Type[_], (String, parameterized.Type[_]) => Any](
+		typeOf[Int].rawType -> {(s, _) => s.toInt},
+		typeOf[java.lang.Integer].rawType -> {(s, _) => s.toInt},
+		typeOf[Long].rawType -> {(s, _) => s.toLong},
+		typeOf[java.lang.Long].rawType -> {(s, _) => s.toLong},
+		typeOf[Short].rawType -> ( (s, _) => s.toShort ),
+		typeOf[java.lang.Short].rawType -> ( (s, _) => s.toShort ),
+		typeOf[Byte].rawType -> ( (s, _) => s.toByte ),
+		typeOf[java.lang.Byte].rawType -> ( (s, _) => s.toByte ),
+		typeOf[Float].rawType -> ( (s, _) => s.toFloat ),
+		typeOf[java.lang.Float].rawType -> ( (s, _) => s.toFloat ),
+		typeOf[Double].rawType -> ( (s, _) => s.toDouble ),
+		typeOf[java.lang.Double].rawType -> {(s, _) => s.toDouble},
+		typeOf[Boolean].rawType -> {(s, _) => s.toBoolean},
+		typeOf[java.lang.Boolean].rawType -> {(s, _) => s.toBoolean},
+		typeOf[String].rawType -> {(s, _) => s},
+		typeOf[Char].rawType -> {(s, _) => if ( s == null ) ( 0: Char ) else s( 0 )},
+		typeOf[Symbol].rawType -> {(s, _) => Symbol(s)},
+		typeOf[Enum[_]].rawType -> {(s, targetType) => targetType.as[parameterized.EnumType].rawType.valueOf( s )}
+		)
+
+	private var binders = Map[String, (String, parameterized.Type[_]) => Any](
 		MimeType.APPLICATION_JSON -> {(s, t) => Binder.unmarshal( s, t ).get}
 		)
 
 	def convert( value: String, hint: String, targetType: parameterized.Type[_] ) =
-		( if ( hint == MimeType.APPLICATION_JAVA_CLASS ) converters( targetType.rawType.name )
-		else converters( hint ) )( value, targetType )
+		( if ( hint == MimeType.APPLICATION_JAVA_CLASS ) converters.find {case (t, _) => t <:< targetType.rawType}.get._2
+		else binders( hint ) )( value, targetType )
 
 	def registerParameterBinder( typeHint: String, pc: ParameterConvertor ): Unit = registerParameterBinder( typeHint, pc.convert( _, _ ) )
 
-	def registerParameterBinder( typeHint: String, convert: (String, parameterized.Type[_]) => Any ) = converters += typeHint -> convert
+	def registerParameterBinder( typeHint: String, convert: (String, parameterized.Type[_]) => Any ) = binders += typeHint -> convert
 
 }
 

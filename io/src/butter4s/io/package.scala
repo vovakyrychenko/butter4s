@@ -33,24 +33,51 @@ package object io {
 
 	def using[A <: {def close()}, B]( c: A )( body: A => B ) = try body( c ) finally c.close
 
-	def copy[P]( source: P, out: OutputStream )( implicit fromSource: P => Array[Byte] ) = out.write( source )
 
-	def copy( in: InputStream, out: OutputStream ) = {
-		val buffer = new Array[Byte]( 2048 );
-		var count = 0
-		while ( {count = in.read( buffer ); count != EOS} ) out.write( buffer, 0, count );
-		out.flush();
+	class RichOutputStream( out: OutputStream ) {
+		def write[P]( source: P )( implicit convert: io.ToArrayConversion[P] ) = out.write( convert( source ) )
 	}
 
-	def readAs[R]( in: InputStream )( implicit toResult: Array[Byte] => R ): R = {
-		val bytes = new ByteArrayOutputStream()
-		copy( in, bytes )
-		bytes.toByteArray
+	implicit def toRichOutputStream( out: OutputStream ) = new RichOutputStream( out )
+
+	class RichInputStream( in: InputStream ) {
+		def readAs[R]( implicit convert: io.FromArrayConversion[R] ): R = {
+			val bytes = new ByteArrayOutputStream()
+			copy( bytes )
+			convert( bytes.toByteArray )
+		}
+
+		def copy( out: OutputStream ) = {
+			val buffer = new Array[Byte]( 2048 );
+			var count = 0
+			while ( {count = in.read( buffer ); count != EOS} ) out.write( buffer, 0, count );
+			out.flush();
+		}
 	}
 
-	class RichInputStream( is: InputStream ) {
-		def readAs[R]( implicit toResult: Array[Byte] => R ): R = io.readAs[R]( is )
+	implicit def toRichInputStream( in: InputStream ) = new RichInputStream( in )
+}
+
+package io {
+object FromArrayConversion extends LowPriorityImplicits
+trait FromArrayConversion[R] extends ( Array[Byte] => R )
+
+
+object ToArrayConversion extends LowPriorityImplicits
+trait ToArrayConversion[P] extends ( P => Array[Byte] )
+
+
+trait LowPriorityImplicits {
+	implicit object ToBytesArrayConversion extends FromArrayConversion[Array[Byte]] {
+		def apply( bytes: Array[Byte] ) = bytes
 	}
 
-	implicit def toRichInputStream( is: InputStream ) = new RichInputStream( is )
+	implicit object ToStringArrayConversion extends FromArrayConversion[String] {
+		def apply( bytes: Array[Byte] ) = new String( bytes, "UTF-8" )
+	}
+
+	implicit object ToByteArrayConversion extends ToArrayConversion[String] {
+		def apply( s: String ) = s.getBytes( "UTF-8" )
+	}
+}
 }

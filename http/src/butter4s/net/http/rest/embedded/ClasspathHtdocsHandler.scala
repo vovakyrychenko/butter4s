@@ -40,7 +40,7 @@ object ClasspathHtdocsHandler extends HttpRequestHandler {
 	def handle( req: HttpRequest, resp: HttpResponse, context: HttpContext ) = {
 		getClass.getResourceAsStream( "/WEB-INF" + req.getRequestLine.getUri ) match {
 			case null => resp.setStatusCode( 404 )
-			case is => resp.setEntity( new ByteArrayEntity( readAs[Array[Byte]]( is ) ) {
+			case is => resp.setEntity( new ByteArrayEntity( is.readAs[Array[Byte]] ) {
 				setContentType( mimeTypes.getContentType( req.getRequestLine.getUri ) )
 			} )
 		}

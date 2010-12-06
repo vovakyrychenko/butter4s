@@ -18,7 +18,7 @@ trait JSONStorage[T <: AnyRef] {
 
 	def findRaw( id: String ): Option[String] = synchronized {
 		val file = new File( location + "/" + id + ".json" )
-		if ( file.exists ) Some( file.read )
+		if ( file.exists ) Some( file.read[String] )
 		else None
 	}
 
