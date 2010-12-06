@@ -37,7 +37,7 @@ import java.net.{SocketTimeoutException, InetAddress, ServerSocket}
 class Server( port: Int, local: Boolean ) extends Logging with Runnable {
 	private val serverSocket = if ( local ) new ServerSocket( port, 0, InetAddress.getByName( "localhost" ) ) else new ServerSocket( port )
 	locally {
-		serverSocket.setSoTimeout( 200 )
+		serverSocket.setSoTimeout( 100 )
 	}
 	private val httpParams = new BasicHttpParams()
 	locally {
@@ -60,7 +60,7 @@ class Server( port: Int, local: Boolean ) extends Logging with Runnable {
 		setHandlerResolver( registry );
 	}
 
-	registry.register( "/htdocs/*", ClasspathHtdocsHandler )
+	registry.register( "/htdocs/*", ClasspathWebInfHandler )
 
 	def add( name: String, service: rest.Service ) = registry.register( "/" + name + "/*", new EmbeddedServiceAdapter( name, service ) )
 

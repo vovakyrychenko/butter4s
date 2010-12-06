@@ -29,15 +29,17 @@ import butter4s.lang._
 import butter4s.io._
 import org.apache.http.entity.ByteArrayEntity
 import javax.activation.MimetypesFileTypeMap
+import butter4s.logging.Logging
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
-object ClasspathHtdocsHandler extends HttpRequestHandler {
+object ClasspathWebInfHandler extends HttpRequestHandler with Logging {
 	val mimeTypes = new MimetypesFileTypeMap()
 
 	def handle( req: HttpRequest, resp: HttpResponse, context: HttpContext ) = {
+		log.debug( req.getRequestLine )
 		getClass.getResourceAsStream( "/WEB-INF" + req.getRequestLine.getUri ) match {
 			case null => resp.setStatusCode( 404 )
 			case is => resp.setEntity( new ByteArrayEntity( is.readAs[Array[Byte]] ) {
