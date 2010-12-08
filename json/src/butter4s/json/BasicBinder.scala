@@ -89,7 +89,7 @@ class BasicBinder {
 	def marshalField[A]( field: raw.Field[A], obj: A ) = {
 		val value = field.accessible {field.get( obj )}
 		"\"" + field.name + "\":" +
-				field.annotation[Element].flatMap( ann => if ( value.typeOf != field.rawType && ann.useTypeHint ) Some( "{\"value\":" + marshalUnknown( value ) + ",\"typeHint\":\"" + typeHint( value ) + "\"}" ) else None ).getOrElse( marshalUnknown( value ) )
+				field.annotation[Element].flatMap( ann => if ( value != null && value.typeOf != field.rawType && ann.useTypeHint ) Some( "{\"value\":" + marshalUnknown( value ) + ",\"typeHint\":\"" + typeHint( value ) + "\"}" ) else None ).getOrElse( marshalUnknown( value ) )
 	}
 
 	private def typeHint( v: Any ) =
