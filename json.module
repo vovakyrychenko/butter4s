@@ -28,5 +28,5 @@ module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
 module.libraries = dist/*.jar
 module.sources = json/src
 module.use.scala = true
-#module.use.java = true
+module.use.java = true
 #module.scala.home = ${scala.2.8.home}
