@@ -36,5 +36,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention( RUNTIME )
 @Target( FIELD )
 public @interface Element {
-	boolean anyType() default false;
+	boolean useTypeHint() default false;
 }

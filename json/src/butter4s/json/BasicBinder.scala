@@ -89,7 +89,7 @@ class BasicBinder {
 	def marshalField[A]( field: raw.Field[A], obj: A ) = {
 		val value = field.accessible {field.get( obj )}
 		"\"" + field.name + "\":" +
-				field.annotation[Element].flatMap( ann => if ( ann.anyType ) Some( "{\"value\":" + marshalUnknown( value ) + ",\"typeHint\":\"" + typeHint( value ) + "\"}" ) else None ).getOrElse( marshalUnknown( value ) )
+				field.annotation[Element].flatMap( ann => if ( value.typeOf != field.rawType && ann.useTypeHint ) Some( "{\"value\":" + marshalUnknown( value ) + ",\"typeHint\":\"" + typeHint( value ) + "\"}" ) else None ).getOrElse( marshalUnknown( value ) )
 	}
 
 	private def typeHint( v: Any ) =
@@ -147,7 +147,7 @@ class BasicBinder {
 			case None => throw new BindingException( "field " + name + " is not declared in " + targetType )
 			case Some( field ) => field.rawField.accessible {
 				field.rawField.set( obj,
-					if ( field.rawField.annotation[Element].flatMap( ann => if ( ann.anyType ) Some( true ) else None ).isDefined )
+					if ( field.rawField.annotation[Element].flatMap( ann => if ( ann.useTypeHint ) Some( true ) else None ).isDefined )
 						unmarshalUnknown( fromTypeHint( value.asInstanceOf[Map[String, Any]]( "typeHint" ).asInstanceOf[String] ), value.asInstanceOf[Map[String, Any]]( "value" ) )
 					else unmarshalUnknown( field.actualType, value ) )
 			}
@@ -172,7 +172,7 @@ class BasicBinder {
 	def unmarshalField[T <: parameterized.RefType[A], A]( field: parameterized.Field[T, A], obj: A, value: Any ) =
 		field.rawField.accessible {
 			field.rawField.set( obj,
-				if ( field.rawField.annotation[Element].flatMap( ann => if ( ann.anyType ) Some( true ) else None ).isDefined )
+				if ( field.rawField.annotation[Element].flatMap( ann => if ( ann.useTypeHint ) Some( true ) else None ).isDefined )
 					unmarshalUnknown( fromTypeHint( value.asInstanceOf[Map[String, Any]]( "typeHint" ).asInstanceOf[String] ), value.asInstanceOf[Map[String, Any]]( "value" ) )
 				else unmarshalUnknown( field.actualType, value ) )
 		}

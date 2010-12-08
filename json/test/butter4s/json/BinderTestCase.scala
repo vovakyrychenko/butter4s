@@ -116,7 +116,7 @@ case class EnumBean( @( Attribute@field ) var v: TestEnum ) {
 	def this() = this ( null )
 }
 
-case class BeanAnyRef( @( Element@field )( anyType = true ) var a: Any ) {
+case class BeanAnyRef( @( Element@field )( useTypeHint = true ) var a: Any ) {
 	def this() = this ( null.asInstanceOf[AnyRef] )
 }
 
