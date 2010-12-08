@@ -22,7 +22,7 @@
 #  THE SOFTWARE.
 #
 
-module.name = butter4s-json
+module.name = butter4s-json                                                F
 module.title = butter4s-json
 module.vendor = Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
 module.libraries = dist/*.jar
