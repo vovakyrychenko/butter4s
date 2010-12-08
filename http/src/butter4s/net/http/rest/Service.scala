@@ -30,10 +30,7 @@ import butter4s.io._
 import butter4s.json.Binder
 import butter4s.logging.Logging
 import java.lang.reflect.InvocationTargetException
-import java.io.{InputStream, Writer}
 import butter4s.net.http.rest.Method.Constants
-import butter4s.net.http.HttpMethod
-
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
@@ -75,7 +72,7 @@ object Service {
 		typeOf[java.lang.Boolean].rawType -> {(s, _) => s.toBoolean},
 		typeOf[String].rawType -> {(s, _) => s},
 		typeOf[Char].rawType -> {(s, _) => if ( s == null ) ( 0: Char ) else s( 0 )},
-		typeOf[Symbol].rawType -> {(s, _) => Symbol(s)},
+		typeOf[Symbol].rawType -> {(s, _) => Symbol( s )},
 		typeOf[Enum[_]].rawType -> {(s, targetType) => targetType.as[parameterized.EnumType].rawType.valueOf( s )}
 		)
 
@@ -144,7 +141,9 @@ trait Service extends Logging {
 	def api( request: Request ) = "var api_" + request.context.serviceName + " = { \n\tsync: {\n" + parameterized.Type.fromClass( getClass ).as[parameterized.ClassType].methods.view.filter( m => m.rawMethod.annotatedWith[Method] && m.rawMethod.name != "api" ).map(
 		method => {
 			val params = method.parameters.view.filter( _.rawParameter.annotatedWith[Param] )
-			val (queryParams, pathParams) = params.partition( _.rawParameter.annotation[Param].get.from == Param.From.QUERY )
+			val queryParams = params.filter( _.rawParameter.annotation[Param].get.from == Param.From.QUERY )
+			val pathParams = params.filter( _.rawParameter.annotation[Param].get.from == Param.From.PATH )
+			val bodyParam = params.find( _.rawParameter.annotation[Param].get.from == Param.From.BODY )
 			val restMethod = method.rawMethod.annotation[Method].get
 			"\t\t" + method.rawMethod.name + ": function (" + params.map( _.rawParameter.annotation[Param].get.name ).mkString( "," ) + ") {\n" +
 					"\t\t\tvar result, error;\n" +
@@ -162,6 +161,7 @@ trait Service extends Logging {
 					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
 					"\t\t\t\tasynchronous: false,\n" +
+					( if ( bodyParam.isDefined ) "\t\t\t\tpostBody: " + bodyParam.get.rawParameter.annotation[Param].get.name + ",\n" else "" ) +
 					"\t\t\t\tonSuccess: function( response ) {\n" +
 					( if ( MimeType.isJson( restMethod.produces ) ) "\t\t\t\t\tresult = response.responseJSON;\n"
 					else if ( restMethod.produces == Constants.NONE ) "\t\t\t\t\tresult = response.status;\n" else "\t\t\t\t\tresult = response.responseText;\n" ) +
@@ -175,7 +175,9 @@ trait Service extends Logging {
 		} ).mkString( ",\n\n" ) + "\n\t},\n\tasync: {\n" + parameterized.Type.fromClass( getClass ).as[parameterized.ClassType].methods.view.filter( m => m.rawMethod.annotatedWith[Method] && m.rawMethod.name != "api" ).map(
 		method => {
 			val params = method.parameters.view.filter( _.rawParameter.annotatedWith[Param] )
-			val (queryParams, pathParams) = params.partition( _.rawParameter.annotation[Param].get.from == Param.From.QUERY )
+			val queryParams = params.filter( _.rawParameter.annotation[Param].get.from == Param.From.QUERY )
+			val pathParams = params.filter( _.rawParameter.annotation[Param].get.from == Param.From.PATH )
+			val bodyParam = params.find( _.rawParameter.annotation[Param].get.from == Param.From.BODY )
 			val restMethod = method.rawMethod.annotation[Method].get
 			"\t\t" + method.rawMethod.name + ": function (" + ( params.map( _.rawParameter.annotation[Param].get.name ) :+ "succeed" :+ "failed" ).mkString( "," ) + ") {\n" +
 					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
@@ -191,6 +193,7 @@ trait Service extends Logging {
 					"\t\t\t\tmethod: '" + restMethod.httpMethod()( 0 ) + "',\n" +
 					"\t\t\t\tevalJSON: " + MimeType.isJson( restMethod.produces ) + ",\n" +
 					"\t\t\t\tevalJS: false,\n" +
+					( if ( bodyParam.isDefined ) "\t\t\t\tpostBody: " + bodyParam.get.rawParameter.annotation[Param].get.name + ",\n" else "" ) +
 					"\t\t\t\tonSuccess: function( response ) {\n" +
 					"\t\t\t\t\tif (succeed) succeed(" +
 					( if ( MimeType.isJson( restMethod.produces ) ) "response.responseJSON"
