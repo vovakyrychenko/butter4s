@@ -23,7 +23,8 @@
  */
 package butter4s.json
 
-import annotation.target.field
+import annotation.{Element, Attribute}
+import scala.annotation.target.field
 import javax.xml.bind.annotation.{XmlElement, XmlAttribute}
 import butter4s.benchmark._
 import org.junit.Test
@@ -42,17 +43,17 @@ object YearJson {
 
 }
 class Year {
-	@( XmlAttribute@field ) var year: Int = _
-	@( XmlElement@field ) var months = List[Month]()
+	@( Attribute@field ) var year: Int = _
+	@( Element@field ) var months = List[Month]()
 }
 
 class Month {
-	@( XmlAttribute@field ) var name: String = _
-	@( XmlAttribute@field ) var number: Int = _
-	@( XmlElement@field ) var days = List[Day]()
+	@( Attribute@field ) var name: String = _
+	@( Attribute@field ) var number: Int = _
+	@( Element@field ) var days = List[Day]()
 }
 
 class Day {
-	@( XmlAttribute@field ) var date: Int = _
-	@( XmlAttribute@field ) var kind: String = _
+	@( Attribute@field ) var date: Int = _
+	@( Attribute@field ) var kind: String = _
 }

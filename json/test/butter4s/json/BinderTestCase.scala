@@ -23,10 +23,10 @@
  */
 package butter4s.json
 
+import annotation.{Element, Attribute}
 import org.junit.{Test, Assert}
 import Assert._
 import scala.annotation.target.field
-import javax.xml.bind.annotation.{XmlAttribute, XmlElement}
 import butter4s.logging.Logging
 
 /**
@@ -47,6 +47,7 @@ class BinderTestCase extends Logging {
 		assertBind( 10 )
 		assertBind( 10.3 )
 		assertBind( 'a' )
+		assertBind( 'a )
 	}
 
 	@Test def bindList = {
@@ -65,6 +66,14 @@ class BinderTestCase extends Logging {
 
 	@Test def bindNulls = assertBind( Bean( null, 10, null ) )
 
+	@Test def bindAnyRefField = {
+		assertBind( new BeanAnyRef( 'ss ) )
+		assertBind( new BeanAnyRef( TestEnum.B ) )
+		assertBind( new BeanAnyRef( "str" ) )
+		assertBind( new BeanAnyRef( 1 ) )
+		assertBind( new BeanAnyRef( EnumBean( TestEnum.B ) ) )
+	}
+
 	def assertBind[A: Manifest]( source: A ) = {
 		println( "========================================" )
 		val json = log.time( "marshal", Binder.marshal( source ) )
@@ -78,31 +87,36 @@ class BinderTestCase extends Logging {
 
 }
 
-case class Bean( @( XmlElement@field ) var str: String, @( XmlAttribute@field ) var i: Int, @( XmlElement@field ) var sb2: Bean2 ) {
+case class Bean( @( Attribute@field ) var str: String, @( Attribute@field ) var i: Int, @( Element@field ) var sb2: Bean2 ) {
 	def this() = this ( null, 0, null )
 }
 
-case class Bean2( @( XmlElement@field ) var s2: String, @( XmlAttribute@field ) var i2: Int, @( XmlElement@field ) list: List[Int] = List() ) {
+case class Bean2( @( Element@field ) var s2: String, @( Attribute@field ) var i2: Int, @( Element@field ) list: List[Int] = List() ) {
 	def this() = this ( null, 0 )
 }
 
-case class ListBean( @( XmlElement@field ) var l: List[List[Int]] ) {
+case class ListBean( @( Element@field ) var l: List[List[Int]] ) {
 	def this() = this ( List() )
 }
 
-case class BeanGeneric[A]( @( XmlElement@field ) var a: A ) {
+case class BeanGeneric[A]( @( Element@field ) var a: A ) {
 	def this() = this ( null.asInstanceOf[A] )
 }
 
-case class BeanGB( @( XmlElement@field ) var bg: BeanGeneric[List[Int]] ) {
+case class BeanGB( @( Element@field ) var bg: BeanGeneric[List[Int]] ) {
 	def this() = this ( null )
 }
 
-case class BeanGB2( @( XmlElement@field ) var bg: BeanGeneric[List[BeanGeneric[List[Int]]]],
-                    @( XmlElement@field ) var bg2: BeanGeneric[List[BeanGeneric[List[Int]]]] ) {
+case class BeanGB2( @( Element@field ) var bg: BeanGeneric[List[BeanGeneric[List[Int]]]],
+                    @( Element@field ) var bg2: BeanGeneric[List[BeanGeneric[List[Int]]]] ) {
 	def this() = this ( null, null )
 }
 
-case class EnumBean( @( XmlAttribute@field ) var v: TestEnum ) {
+case class EnumBean( @( Attribute@field ) var v: TestEnum ) {
 	def this() = this ( null )
 }
+
+case class BeanAnyRef( @( Element@field )( anyType = true ) var a: Any ) {
+	def this() = this ( null.asInstanceOf[AnyRef] )
+}
+

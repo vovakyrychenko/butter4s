@@ -47,6 +47,7 @@ trait RefType[T] extends Type[T] {
 
 class Field[T] private[reflect]( protected val javaField: java.lang.reflect.Field ) {
 	lazy val name = javaField.getName
+	lazy val rawType = Type.fromClass( javaField.getType )
 
 	def accessible[A]( code: => A ) = {
 		javaField.setAccessible( true )
