@@ -23,20 +23,11 @@
  */
 package butter4s.net.http.rest
 
-import javax.xml.bind.annotation.XmlAttribute
-import annotation.target.field
-import org.junit.{Assert, Test}
-import butter4s.json.Binder
-import butter4s.lang.reflect._
-import butter4s.json.annotation.Attribute
-
 /**
- * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
+ * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
-class ServiceTestCase {
-	@Test def convertJSON = Assert.assertEquals( Bean( "test" ), Service.convert( Binder.marshal( Bean( "test" ) ), MimeType.APPLICATION_JSON, typeOf[Bean] ) )
-}
+trait Context {
+	val serviceName: String
 
-case class Bean( @( Attribute@field ) var name: String ) {
-	def this() = this ( null )
+	val serviceLocation: String
 }
