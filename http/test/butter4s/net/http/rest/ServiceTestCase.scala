@@ -23,7 +23,6 @@
  */
 package butter4s.net.http.rest
 
-import javax.xml.bind.annotation.XmlAttribute
 import annotation.target.field
 import org.junit.{Assert, Test}
 import butter4s.json.Binder
