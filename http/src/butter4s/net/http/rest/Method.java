@@ -47,6 +47,8 @@ public @interface Method {
 
 	HttpMethod[] httpMethod() default {HttpMethod.GET, HttpMethod.POST};
 
+	String info() default "";
+
 	interface Constants {
 		String DEFAULT = "$DEFAULT$";
 		String NONE = DEFAULT;
