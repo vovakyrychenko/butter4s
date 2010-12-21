@@ -115,7 +115,7 @@ trait Type[ T ] {
 
 	override def toString = getClass.getSimpleName + "(" + rawType.simpleName + wrapIf(arguments.length > 0)("[", arguments.mkString(","), "]") + ")"
 
-	def toTypeString: String = rawType.simpleName + wrapIf(arguments.length > 0)("[", arguments.map(_.toTypeString).mkString(","), "]")
+	def toTypeString: String = rawType.name + wrapIf(arguments.length > 0)("[", arguments.map(_.toTypeString).mkString(","), "]")
 }
 
 
