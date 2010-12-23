@@ -32,6 +32,8 @@ class File( path: String ) extends FsNode( path ) {
 
 	def length = impl.length
 
+	def delete = impl.delete
+
 	lazy val parent = new Directory( impl.getParent )
 }
 
