@@ -135,12 +135,18 @@ trait Service extends Logging {
 			}
 		}
 	} catch {
-		case e: ImmediateResponse => log.error(e, e);
-		response.status(e.code, e.message)
-		case e: InvocationTargetException if e.getTargetException.isInstanceOf[ ImmediateResponse ] => log.error(e.getTargetException, e.getTargetException);
-		response.status(e.getTargetException.asInstanceOf[ ImmediateResponse ].code, e.getTargetException.getMessage)
-		case e: InvocationTargetException => throw e.getTargetException
-		case e => log.error(e, e); throw e
+		case e: ImmediateResponse =>
+			log.error(e, e);
+			response.status(e.code, e.message)
+		case e: InvocationTargetException if e.getTargetException.isInstanceOf[ ImmediateResponse ] =>
+			log.error(e.getTargetException, e.getTargetException);
+			response.status(e.getTargetException.asInstanceOf[ ImmediateResponse ].code, e.getTargetException.getMessage)
+		case e: InvocationTargetException =>
+			log.error(e, e);
+			throw e.getTargetException
+		case e =>
+			log.error(e, e);
+			throw e
 	})
 
 	@Method(produces = "text/plain", info = "this inforamtion")
