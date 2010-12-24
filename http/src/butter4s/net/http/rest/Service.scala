@@ -140,6 +140,7 @@ trait Service extends Logging {
 		case e: InvocationTargetException if e.getTargetException.isInstanceOf[ ImmediateResponse ] => log.error(e.getTargetException, e.getTargetException);
 		response.status(e.getTargetException.asInstanceOf[ ImmediateResponse ].code, e.getTargetException.getMessage)
 		case e: InvocationTargetException => throw e.getTargetException
+		case e => log.error(e, e); throw e
 	})
 
 	@Method(produces = "text/plain", info = "this inforamtion")
