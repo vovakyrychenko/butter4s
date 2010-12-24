@@ -31,7 +31,7 @@ import java.lang.annotation.RetentionPolicy
  */
 object ServerTest extends Application {
 	val server = new Server( 8081, true )
-	server.add( "math", MathService )
+	server.add( "x/v/math", MathService )
 	server.run
 }
 

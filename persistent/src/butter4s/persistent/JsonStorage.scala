@@ -30,19 +30,24 @@ trait JsonStorage[ T <: AnyRef ] {
 		new Directory(location).filter(_.name.endsWith(".json")).map(_.asInstanceOf[ File ].read[ String ])
 	}
 
-	def store(obj: T) = synchronized{
-		new File(path(obj)).write(Binder.marshal(obj))
+	def store(t: T) = synchronized{
+		new File(path(t)).write(Binder.marshal(t))
 	}
 
 	def isolated(localPath: String) = new JsonStorage[ T ] {
 		val location = JsonStorage.this.location + "/" + localPath
 	}
 
-	private def path(t: T) = location + "/" + id(t) + ".json"
+	private def path(t: T) = location + "/" + identify(t) + ".json"
 
-	private def id(t: T) = t.typeOf.as[ raw.RefType ].fields.find(_.annotatedWith[ Key ]) match {
-		case Some(f) => f.get(t)
+	def identify(t: T) = t.typeOf.as[ raw.RefType ].fields.find(_.annotatedWith[ Key ]) match {
+		case Some(f) => f.accessible[ Any ](f.get(t))
 		case None => throw new StorageException(t.typeOf + " has no field annotated with @Key")
+	}
+
+	def updateAll(ts: Seq[ T ]) = {
+		new Directory(location).clear
+		for( t <- ts ) store(t)
 	}
 
 	def delete(t: T) = synchronized{
