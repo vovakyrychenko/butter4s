@@ -51,7 +51,7 @@ class Directory(_path: String) extends FsNode(_path) with TraversableLike[FsNode
 
 	def create = impl.mkdirs
 
-	def foreach[U](f: (FsNode) => U): Unit = items.foreach(f)
+	def foreach[U](f: FsNode => U): Unit = items.foreach(f)
 
 	def clear = this.foreach(_.delete)
 
