@@ -35,7 +35,7 @@ object Formatter {
 		val b = new StringBuilder
 		var string = false
 		var escape = false
-		var tabs = new StringBuilder
+		val tabs = new StringBuilder
 		for ( c <- json ) ( c: @switch ) match {
 			case '"' if !escape => b.append( "\"" ); string = !string; escape = false
 			case x@( '{' | '[' ) if !string => tabs += '\t'; b.append( x ).append( "\n" ).append( tabs ); escape = false

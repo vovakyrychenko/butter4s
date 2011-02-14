@@ -39,7 +39,17 @@ class FormatterTestCase {
 		println( result )
 	}
 
-	@Test def performance = benchmark( "format", 1000 ) {
+	@Test def performance = benchmark( "format", 10000 ) {
 		Formatter.format( YearJson.json )
+	}
+}
+
+object FBenchmark {
+	def main(args:Array[String]) = {
+		val start = System.currentTimeMillis
+		benchmark( "format", 10000 ) {
+			Formatter.format( YearJson.json )
+		}
+		println("took " + (System.currentTimeMillis - start) + "ms")
 	}
 }
