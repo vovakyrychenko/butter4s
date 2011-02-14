@@ -32,50 +32,52 @@ import butter4s.lang.reflect.raw
 
 trait RefType[T] extends Type[T] {
 	lazy val fields = {
-		@tailrec def find( fields: List[Field[RefType.this.type, T]], clazz: Class[_] ): List[Field[RefType.this.type, T]] =
-			if ( clazz == null ) fields else find( fields ::: clazz.getDeclaredFields.map( new Field[RefType.this.type, T]( _, RefType.this ) ).toList, clazz.getSuperclass )
+		@tailrec def find(fields: List[Field[RefType.this.type, T]], clazz: Class[_]): List[Field[RefType.this.type, T]] =
+			if( clazz == null ) fields else find(fields ::: clazz.getDeclaredFields.map(new Field[RefType.this.type, T](_, RefType.this)).toList, clazz.getSuperclass)
 
-		find( List[Field[RefType.this.type, T]](), javaClass )
+		find(List[Field[RefType.this.type, T]](), javaClass)
 	}
 
 	lazy val methods = {
-		@tailrec def find( methods: List[Method[RefType.this.type, T]], clazz: Class[_] ): List[Method[RefType.this.type, T]] =
-			if ( clazz == null ) methods else find( methods ::: clazz.getDeclaredMethods.map( new Method[RefType.this.type, T]( _, RefType.this ) ).toList, clazz.getSuperclass )
+		@tailrec def find(methods: List[Method[RefType.this.type, T]], clazz: Class[_]): List[Method[RefType.this.type, T]] =
+			if( clazz == null ) methods else find(methods ::: clazz.getDeclaredMethods.map(new Method[RefType.this.type, T](_, RefType.this)).toList, clazz.getSuperclass)
 
-		find( List[Method[RefType.this.type, T]](), javaClass )
+		find(List[Method[RefType.this.type, T]](), javaClass)
 	}
 }
 
 
-class Field[OT <: RefType[T], T] private[parameterized]( protected val javaField: java.lang.reflect.Field, val ownerType: OT ) {
-	lazy val rawField = new raw.Field[T]( javaField )
+class Field[OT <: RefType[T], T] private[parameterized](protected val javaField: java.lang.reflect.Field, val ownerType: OT) {
+	lazy val rawField = new raw.Field[T](javaField)
 
 	lazy val actualType: Type[_] = javaField.getGenericType match {
-		case t: java.lang.reflect.TypeVariable[_] => ownerType.actualTypeOf( t.getName )
-		case t: java.lang.reflect.ParameterizedType => Type.fromParameterizedType( t )
-		case t: Class[_] => Type.fromClass( t )
-		case x => throw new RuntimeException( x.getClass + " not yet supported" )
+		case t: java.lang.reflect.TypeVariable[_] => ownerType.actualTypeOf(t.getName)
+		case t: java.lang.reflect.ParameterizedType => Type.fromParameterizedType(t)
+		case t: Class[_] => Type.fromClass(t)
+		case x => throw new RuntimeException(x.getClass + " not yet supported")
 	}
 
 	override def toString = "field " + rawField.name
 }
 
-class Method[OT <: RefType[T], T] private[parameterized]( protected val javaMethod: java.lang.reflect.Method, val ownerType: OT ) {
-	lazy val rawMethod = new raw.Method[T]( javaMethod )
+class Method[OT <: RefType[T], T] private[parameterized](protected val javaMethod: java.lang.reflect.Method, val ownerType: OT) {
+	lazy val rawMethod = new raw.Method[T](javaMethod)
 
-	lazy val parameters = javaMethod.getParameterTypes.zip( javaMethod.getGenericParameterTypes ).zip( javaMethod.getParameterAnnotations ).map {case ((cls, t), as) => new Parameter( cls, t, as.toList, Method.this )}
+	lazy val parameters = javaMethod.getParameterTypes.zip(javaMethod.getGenericParameterTypes).zip(javaMethod.getParameterAnnotations).map {
+		case ((cls, t), as) => new Parameter[OT, T](cls, t, as.toList, Method.this)
+	}
 
 	override def toString = "method " + rawMethod.name
 }
 
-class Parameter[OT <: RefType[T], T] private[parameterized]( protected val javaClass: Class[_], protected val nativeType: java.lang.reflect.Type, val annotations: List[java.lang.annotation.Annotation], val ownerMethod: Method[OT, T] ) {
-	lazy val rawParameter = new raw.Parameter( javaClass, annotations )
+class Parameter[OT <: RefType[T], T] private[parameterized](protected val javaClass: Class[_], protected val nativeType: java.lang.reflect.Type, val annotations: List[java.lang.annotation.Annotation], val ownerMethod: Method[OT, T]) {
+	lazy val rawParameter = new raw.Parameter(javaClass, annotations)
 
 	lazy val actualType: Type[_] = nativeType match {
-		case t: java.lang.reflect.TypeVariable[_] => ownerMethod.ownerType.actualTypeOf( t.getName )
-		case t: java.lang.reflect.ParameterizedType => Type.fromParameterizedType( t )
-		case t: Class[_] => Type.fromClass( t )
-		case x => throw new RuntimeException( x.getClass + " not yet supported" )
+		case t: java.lang.reflect.TypeVariable[_] => ownerMethod.ownerType.actualTypeOf(t.getName)
+		case t: java.lang.reflect.ParameterizedType => Type.fromParameterizedType(t)
+		case t: Class[_] => Type.fromClass(t)
+		case x => throw new RuntimeException(x.getClass + " not yet supported")
 	}
 
 	override def toString = "parameter " + nativeType
