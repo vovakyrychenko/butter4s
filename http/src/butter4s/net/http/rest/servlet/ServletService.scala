@@ -32,55 +32,58 @@ import butter4s.net.http.{HttpMethod, rest}
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 class ServletService extends HttpServlet with rest.Service {
-	override def doDelete( req: HttpServletRequest, resp: HttpServletResponse ) = doIt( req, resp )
+	override def doDelete(req: HttpServletRequest, resp: HttpServletResponse) = doIt(req, resp)
 
-	override def doPut( req: HttpServletRequest, resp: HttpServletResponse ) = doIt( req, resp )
+	override def doPut(req: HttpServletRequest, resp: HttpServletResponse) = doIt(req, resp)
 
-	override def doHead( req: HttpServletRequest, resp: HttpServletResponse ) = doIt( req, resp )
+	override def doHead(req: HttpServletRequest, resp: HttpServletResponse) = doIt(req, resp)
 
-	override def doPost( req: HttpServletRequest, resp: HttpServletResponse ) = doIt( req, resp )
+	override def doPost(req: HttpServletRequest, resp: HttpServletResponse) = doIt(req, resp)
 
-	override def doGet( req: HttpServletRequest, resp: HttpServletResponse ) = doIt( req, resp )
+	override def doGet(req: HttpServletRequest, resp: HttpServletResponse) = doIt(req, resp)
 
-	def doIt( req: HttpServletRequest, resp: HttpServletResponse ) = perform( new ServletRequestAdapter( req, this ), new ServletResponseAdapter( resp ) )
+	def doIt(req: HttpServletRequest, resp: HttpServletResponse) = perform(new ServletRequestAdapter(req, this), new ServletResponseAdapter(resp))
 
 }
 
-class ServletRequestAdapter( req: HttpServletRequest, servlet: HttpServlet ) extends rest.Request {
-	def parameters( name: String ) = req.getParameterValues( name ).toList
+class ServletRequestAdapter(req: HttpServletRequest, servlet: HttpServlet) extends rest.Request {
+	def parameters(name: String) = req.getParameterValues(name).toList
 
-	def parameter( name: String ) = Option( req.getParameter( name ) )
+	def parameter(name: String) = Option(req.getParameter(name))
 
-	lazy val requestLine = req.getRequestURI.substring( req.getServletPath.length )
+	lazy val requestLine = req.getRequestURI.substring(req.getServletPath.length)
 
-	lazy val httpMethod = HttpMethod.valueOf( req.getMethod.toUpperCase )
+	lazy val httpMethod = HttpMethod.valueOf(req.getMethod.toUpperCase)
 
-	lazy val context = new ServletContextAdapter( req, servlet )
+	lazy val context = new ServletContextAdapter(req, servlet)
 
-	lazy val session = new ServletSessionAdapter( req.getSession )
+	lazy val session = new ServletSessionAdapter(req.getSession)
 
 	lazy val body = req.getInputStream
 }
 
-class ServletContextAdapter( req: HttpServletRequest, servlet: HttpServlet ) extends rest.Context {
-	lazy val serviceLocation = req.getRequestURI.substring( 0, req.getServletPath.length )
+class ServletContextAdapter(req: HttpServletRequest, servlet: HttpServlet) extends rest.Context {
+	lazy val serviceLocation = req.getRequestURI.substring(0, req.getServletPath.length)
 
 	lazy val serviceName = servlet.getServletConfig.getServletName
 }
 
-class ServletSessionAdapter( s: HttpSession ) extends rest.Session {
-	def apply[A]( name: String ) = Option( s.getAttribute( name ).asInstanceOf[A] )
+class ServletSessionAdapter(s: HttpSession) extends rest.Session {
+	def apply[A](name: String) = Option(s.getAttribute(name).asInstanceOf[A])
 
-	def update( name: String, value: Any ) = s.setAttribute( name, value )
+	def update(name: String, value: Any) = s.setAttribute(name, value)
 
 	def invalidate = s.invalidate
 }
 
-class ServletResponseAdapter( resp: HttpServletResponse ) extends rest.Response {
-	def status( code: Int, message: String = null ) = if ( code < 400 ) resp.setStatus( code ) else resp.sendError( code, message )
+class ServletResponseAdapter(resp: HttpServletResponse) extends rest.Response {
+	def status(code: Int, message: String = null) = if( code < 400 ) {
+		resp.setContentType("text/plain");
+		resp.setStatus(code);
+	} else resp.sendError(code, message)
 
-	def content( contentType: String, what: ( => Writer ) => Unit ) = {
-		resp.setContentType( contentType )
-		what( resp.getWriter )
+	def content(contentType: String, what: (=> Writer) => Unit) = {
+		resp.setContentType(contentType)
+		what(resp.getWriter)
 	}
 }
