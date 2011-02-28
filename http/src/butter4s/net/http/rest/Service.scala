@@ -168,8 +168,79 @@ trait Service extends Logging {
 		}
 	}.mkString("\n\n\n") + "\n"
 
-	@Method(produces = "text/javascript", info = "prototypejs.org AJAX RPC")
-	def _api(request: Request) = "var api_" + request.context.serviceName + " = { \n\tsync: {\n" + parameterized.Type.fromClass(getClass).as[ parameterized.ClassType ].methods.view.filter(m => m.rawMethod.annotatedWith[ Method ] && m.rawMethod.name != "_api").map(
+//	@Method(produces = "text/javascript", info = "prototypejs.org AJAX RPC")
+//	def _apiPrototype(request: Request) = "var api_Prototype_" + request.context.serviceName + " = { \n\tsync: {\n" + parameterized.Type.fromClass(getClass).as[ parameterized.ClassType ].methods.view.filter(m => m.rawMethod.annotatedWith[ Method ] && m.rawMethod.name != "_api").map(
+//		method => {
+//			val params = method.parameters.view.filter(_.rawParameter.annotatedWith[ Param ])
+//			val queryParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.QUERY)
+//			val pathParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.PATH)
+//			val bodyParam = params.find(_.rawParameter.annotation[ Param ].get.from == Param.From.BODY)
+//			val restMethod = method.rawMethod.annotation[ Method ].get
+//			"\t\t" + method.rawMethod.name + ": function (" + params.map(_.rawParameter.annotation[ Param ].get.name).mkString(",") + ") {\n" +
+//					"\t\t\tvar result, error;\n" +
+//					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
+//					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "', {\n" +
+//					"\t\t\t\tparameters: {\n" +
+//					queryParams.map(p => {
+//						val restParam = p.rawParameter.annotation[ Param ].get
+//						"\t\t\t\t\t" + restParam.name + ":" + ( if( p.rawParameter.rawType <:< typeOf[ List[ _ ] ].rawType ) restParam.name + ".collect(function(x){return " +
+//								wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", "x", ")") + ";})"
+//						else
+//							wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", restParam.name, ")") )
+//					}).mkString(",\n") + "\n" +
+//					"\t\t\t\t},\n" +
+//					"\t\t\t\tmethod: '" + restMethod.httpMethod()(0) + "',\n" +
+//					"\t\t\t\tevalJSON: " + MimeType.isJson(restMethod.produces) + ",\n" +
+//					"\t\t\t\tevalJS: false,\n" +
+//					"\t\t\t\tasynchronous: false,\n" +
+//					( if( bodyParam.isDefined ) "\t\t\t\tpostBody: " + bodyParam.get.rawParameter.annotation[ Param ].get.name + ",\n" else "" ) +
+//					"\t\t\t\tonSuccess: function( response ) {\n" +
+//					( if( MimeType.isJson(restMethod.produces) ) "\t\t\t\t\tresult = response.responseJSON;\n"
+//					else if( restMethod.produces == Constants.NONE ) "\t\t\t\t\tresult = response.status;\n" else "\t\t\t\t\tresult = response.responseText;\n" ) +
+//					"\t\t\t\t},\n" +
+//					"\t\t\t\tonFailure: function( response ) { \n" +
+//					"\t\t\t\t\terror = response.statusText;\n" +
+//					"\t\t\t\t}\n" +
+//					"\t\t\t});\n" +
+//					"\t\t\tif (error) throw error; else return result;\n" +
+//					"\t\t}"
+//		}).mkString(",\n\n") + "\n\t},\n\tasync: {\n" + parameterized.Type.fromClass(getClass).as[ parameterized.ClassType ].methods.view.filter(m => m.rawMethod.annotatedWith[ Method ] && m.rawMethod.name != "_api").map(
+//		method => {
+//			val params = method.parameters.view.filter(_.rawParameter.annotatedWith[ Param ])
+//			val queryParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.QUERY)
+//			val pathParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.PATH)
+//			val bodyParam = params.find(_.rawParameter.annotation[ Param ].get.from == Param.From.BODY)
+//			val restMethod = method.rawMethod.annotation[ Method ].get
+//			"\t\t" + method.rawMethod.name + ": function (" + ( params.map(_.rawParameter.annotation[ Param ].get.name) :+ "succeed" :+ "failed" ).mkString(",") + ") {\n" +
+//					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
+//					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "', {\n" +
+//					"\t\t\t\tparameters: {\n" +
+//					queryParams.map(p => {
+//						val restParam = p.rawParameter.annotation[ Param ].get
+//						"\t\t\t\t\t" + restParam.name + ":" + ( if( p.rawParameter.rawType <:< typeOf[ List[ _ ] ].rawType ) restParam.name + ".collect(function(x){return " +
+//								wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", "x", ")") + ";})"
+//						else
+//							wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", restParam.name, ")") )
+//					}).mkString(",\n") + "\n" +
+//					"\t\t\t\t},\n" +
+//					"\t\t\t\tmethod: '" + restMethod.httpMethod()(0) + "',\n" +
+//					"\t\t\t\tevalJSON: " + MimeType.isJson(restMethod.produces) + ",\n" +
+//					"\t\t\t\tevalJS: false,\n" +
+//					( if( bodyParam.isDefined ) "\t\t\t\tpostBody: " + bodyParam.get.rawParameter.annotation[ Param ].get.name + ",\n" else "" ) +
+//					"\t\t\t\tonSuccess: function( response ) {\n" +
+//					"\t\t\t\t\tif (succeed) succeed(" +
+//					( if( MimeType.isJson(restMethod.produces) ) "response.responseJSON"
+//					else if( restMethod.produces == Constants.NONE ) "response.status" else "response.responseText" ) + ");\n" +
+//					"\t\t\t\t},\n" +
+//					"\t\t\t\tonFailure: function( response ) { \n" +
+//					"\t\t\t\t\tif (failed) failed(response.statusText); else alert(response.statusText);\n" +
+//					"\t\t\t\t}\n" +
+//					"\t\t\t});\n" +
+//					"\t\t}"
+//		}).mkString(",\n\n") + "\n\t}\n}"
+
+  @Method(produces = "text/javascript", info = "dojotoolkit.org AJAX RPC")
+	def _api(request: Request) = "var api_dojo_" + request.context.serviceName + " = { \n\tsync: {\n" + parameterized.Type.fromClass(getClass).as[ parameterized.ClassType ].methods.view.filter(m => m.rawMethod.annotatedWith[ Method ] && m.rawMethod.name != "_api").map(
 		method => {
 			val params = method.parameters.view.filter(_.rawParameter.annotatedWith[ Param ])
 			val queryParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.QUERY)
@@ -178,28 +249,27 @@ trait Service extends Logging {
 			val restMethod = method.rawMethod.annotation[ Method ].get
 			"\t\t" + method.rawMethod.name + ": function (" + params.map(_.rawParameter.annotation[ Param ].get.name).mkString(",") + ") {\n" +
 					"\t\t\tvar result, error;\n" +
-					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
-					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "', {\n" +
-					"\t\t\t\tparameters: {\n" +
+					"\t\t\tdojo.xhr( '" + restMethod.httpMethod()(0) + "', {\n" +
+          "\t\t\t\turl: '" + request.context.serviceLocation +
+					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "',\n" +
+					"\t\t\t\tcontent: {\n" +
 					queryParams.map(p => {
 						val restParam = p.rawParameter.annotation[ Param ].get
-						"\t\t\t\t\t" + restParam.name + ":" + ( if( p.rawParameter.rawType <:< typeOf[ List[ _ ] ].rawType ) restParam.name + ".collect(function(x){return " +
-								wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", "x", ")") + ";})"
+						"\t\t\t\t\t" + restParam.name + ":" + ( if( p.rawParameter.rawType <:< typeOf[ List[ _ ] ].rawType ) "dojo.map( " + restParam.name + ", function(x){return " +
+								wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("JSON.stringify(", "x", ")") + ";})"
 						else
-							wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", restParam.name, ")") )
+							wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("JSON.stringify(", restParam.name, ")") )
 					}).mkString(",\n") + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tmethod: '" + restMethod.httpMethod()(0) + "',\n" +
-					"\t\t\t\tevalJSON: " + MimeType.isJson(restMethod.produces) + ",\n" +
-					"\t\t\t\tevalJS: false,\n" +
-					"\t\t\t\tasynchronous: false,\n" +
-					( if( bodyParam.isDefined ) "\t\t\t\tpostBody: " + bodyParam.get.rawParameter.annotation[ Param ].get.name + ",\n" else "" ) +
-					"\t\t\t\tonSuccess: function( response ) {\n" +
-					( if( MimeType.isJson(restMethod.produces) ) "\t\t\t\t\tresult = response.responseJSON;\n"
-					else if( restMethod.produces == Constants.NONE ) "\t\t\t\t\tresult = response.status;\n" else "\t\t\t\t\tresult = response.responseText;\n" ) +
+					"\t\t\t\thandleAs: " + (if (MimeType.isJson(restMethod.produces)) "'json'" else "'text'") + ",\n" +
+					"\t\t\t\tsync: true,\n" +
+           //FIXME: postData or putData?
+					( if( bodyParam.isDefined ) "\t\t\t\tpostData: " + bodyParam.get.rawParameter.annotation[ Param ].get.name + ",\n" else "" ) +
+					"\t\t\t\tload: function( response ) {\n" +
+					"\t\t\t\t\tresult = response;\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tonFailure: function( response ) { \n" +
-					"\t\t\t\t\terror = response.statusText;\n" +
+					"\t\t\t\terror: function( response ) { \n" +
+					"\t\t\t\t\terror = response.message;\n" +
 					"\t\t\t\t}\n" +
 					"\t\t\t});\n" +
 					"\t\t\tif (error) throw error; else return result;\n" +
@@ -212,33 +282,32 @@ trait Service extends Logging {
 			val bodyParam = params.find(_.rawParameter.annotation[ Param ].get.from == Param.From.BODY)
 			val restMethod = method.rawMethod.annotation[ Method ].get
 			"\t\t" + method.rawMethod.name + ": function (" + ( params.map(_.rawParameter.annotation[ Param ].get.name) :+ "succeed" :+ "failed" ).mkString(",") + ") {\n" +
-					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
-					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "', {\n" +
-					"\t\t\t\tparameters: {\n" +
+					"\t\t\treturn dojo.xhr( '" + restMethod.httpMethod()(0) + "', {\n" +
+					"\t\t\t\tcontent: {\n" +
 					queryParams.map(p => {
 						val restParam = p.rawParameter.annotation[ Param ].get
-						"\t\t\t\t\t" + restParam.name + ":" + ( if( p.rawParameter.rawType <:< typeOf[ List[ _ ] ].rawType ) restParam.name + ".collect(function(x){return " +
-								wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", "x", ")") + ";})"
+						"\t\t\t\t\t" + restParam.name + ":" + ( if( p.rawParameter.rawType <:< typeOf[ List[ _ ] ].rawType ) "dojo.map( " + restParam.name + ", function(x){return " +
+								wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("JSON.stringify(", "x", ")") + ";})"
 						else
-							wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", restParam.name, ")") )
+							wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("JSON.stringify(", restParam.name, ")") )
 					}).mkString(",\n") + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tmethod: '" + restMethod.httpMethod()(0) + "',\n" +
-					"\t\t\t\tevalJSON: " + MimeType.isJson(restMethod.produces) + ",\n" +
-					"\t\t\t\tevalJS: false,\n" +
-					( if( bodyParam.isDefined ) "\t\t\t\tpostBody: " + bodyParam.get.rawParameter.annotation[ Param ].get.name + ",\n" else "" ) +
-					"\t\t\t\tonSuccess: function( response ) {\n" +
+					"\t\t\t\turl: '" + request.context.serviceLocation +
+					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "',\n" +
+					"\t\t\t\thandleAs: " + (if (MimeType.isJson(restMethod.produces)) "'json'" else "'text'") + ",\n" +
+          //FIXME: postData or putData?
+					( if( bodyParam.isDefined ) "\t\t\t\tpostData: " + bodyParam.get.rawParameter.annotation[ Param ].get.name + ",\n" else "" ) +
+					"\t\t\t\tload: function( response ) {\n" +
 					"\t\t\t\t\tif (succeed) succeed(" +
-					( if( MimeType.isJson(restMethod.produces) ) "response.responseJSON"
-					else if( restMethod.produces == Constants.NONE ) "response.status" else "response.responseText" ) + ");\n" +
+					( if( MimeType.isJson(restMethod.produces) ) "response"
+					else if( restMethod.produces == Constants.NONE ) "response" else "response" ) + ");\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\tonFailure: function( response ) { \n" +
-					"\t\t\t\t\tif (failed) failed(response.statusText); else alert(response.statusText);\n" +
+					"\t\t\t\terror: function( response ) { \n" +
+					"\t\t\t\t\tif (failed) failed(response.message); else alert(response.message);\n" +
 					"\t\t\t\t}\n" +
 					"\t\t\t});\n" +
 					"\t\t}"
 		}).mkString(",\n\n") + "\n\t}\n}"
-
 
 	def respond(code: Int, reason: String) = throw new ImmediateResponse(code, reason)
 
