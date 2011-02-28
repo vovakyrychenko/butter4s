@@ -23,61 +23,68 @@
  */
 package butter4s.net.http.rest.embedded
 
+
 import butter4s.logging.Logging
+import butter4s.lang._
 import butter4s.lang.concurrent._
 import org.apache.http.params.{CoreConnectionPNames, CoreProtocolPNames, BasicHttpParams}
 import org.apache.http.impl.{DefaultHttpServerConnection, DefaultHttpResponseFactory, DefaultConnectionReuseStrategy}
 import butter4s.net.http.rest
-import org.apache.http.protocol.{HttpRequestHandler, BasicHttpContext, HttpService, HttpRequestHandlerRegistry, ResponseConnControl, BasicHttpProcessor, ResponseDate, ResponseServer, ResponseContent}
+import org.apache.http.protocol.{BasicHttpContext, HttpService, HttpRequestHandlerRegistry, ResponseConnControl, BasicHttpProcessor, ResponseDate, ResponseServer, ResponseContent}
 import java.net.{SocketTimeoutException, InetAddress, ServerSocket}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
-class Server( port: Int, local: Boolean ) extends Logging with Runnable {
-	private val serverSocket = if ( local ) new ServerSocket( port, 0, InetAddress.getByName( "localhost" ) ) else new ServerSocket( port )
+class Server(port: Int, local: Boolean) extends Logging with Runnable {
+	private val serverSocket = if( local ) new ServerSocket(port, 0, InetAddress.getByName("localhost")) else new ServerSocket(port)
 	locally {
-		serverSocket.setSoTimeout( 100 )
+		serverSocket.setSoTimeout(100)
 	}
 	private val httpParams = new BasicHttpParams()
 	locally {
-		httpParams.setIntParameter( CoreConnectionPNames.SO_TIMEOUT, 5000 )
-		httpParams.setIntParameter( CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024 )
-		httpParams.setBooleanParameter( CoreConnectionPNames.STALE_CONNECTION_CHECK, false )
-		httpParams.setBooleanParameter( CoreConnectionPNames.TCP_NODELAY, true )
-		httpParams.setParameter( CoreProtocolPNames.ORIGIN_SERVER, "Butter4sREST/1.0" )
+		httpParams.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 5000)
+		httpParams.setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024)
+		httpParams.setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false)
+		httpParams.setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
+		httpParams.setParameter(CoreProtocolPNames.ORIGIN_SERVER, "Butter4sREST/1.0")
 	}
 	private val registry = new HttpRequestHandlerRegistry();
 	private val processor = new BasicHttpProcessor()
 	locally {
-		processor.addInterceptor( new ResponseDate() )
-		processor.addInterceptor( new ResponseServer() )
-		processor.addInterceptor( new ResponseContent() )
-		processor.addInterceptor( new ResponseConnControl() )
+		processor.addInterceptor(new ResponseDate())
+		processor.addInterceptor(new ResponseServer())
+		processor.addInterceptor(new ResponseContent())
+		processor.addInterceptor(new ResponseConnControl())
 	}
-	private val httpService = new HttpService( processor, new DefaultConnectionReuseStrategy(), new DefaultHttpResponseFactory() ) {
-		setParams( httpParams );
-		setHandlerResolver( registry );
+	private val httpService = new HttpService(processor, new DefaultConnectionReuseStrategy(), new DefaultHttpResponseFactory()) {
+		setParams(httpParams);
+		setHandlerResolver(registry);
 	}
 
-	registry.register( "/htdocs/*", ClasspathWebInfHandler )
+	registry.register("/htdocs/*", ClasspathWebInfHandler)
 
-	def add( name: String, service: rest.Service ) = registry.register( "/" + name + "/*", new EmbeddedServiceAdapter( name, service ) )
+	def add(location: String, service: rest.Service) = {
+		val binding = "/" + location + "/*"
+		val serviceName = location.trimBeforeLast("/")
+		registry.register(binding, new EmbeddedServiceAdapter(serviceName, "/" + location, service))
+		log.debug(serviceName + " bound to " + binding)
+	}
 
 
 	def run = {
-		log.info( "Ready to rock on " + serverSocket.getLocalSocketAddress )
-		while ( !Thread.interrupted ) try {
+		log.info("Ready to rock on " + serverSocket.getLocalSocketAddress)
+		while( !Thread.interrupted ) try {
 			val socket = serverSocket.accept
 			val connection = new DefaultHttpServerConnection() {
-				bind( socket, httpParams )
+				bind(socket, httpParams)
 			}
 			async {
-				log.debug( "accepted connection " + socket )
+				log.debug("accepted connection " + socket)
 				try
-					httpService.handleRequest( connection, new BasicHttpContext() )
+					httpService.handleRequest(connection, new BasicHttpContext())
 				catch {
-					case e => log.error( e, e )
+					case e => log.error(e, e)
 				}
 				finally {
 					connection.shutdown

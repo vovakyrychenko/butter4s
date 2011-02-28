@@ -46,9 +46,17 @@ object Type {
 		else new ClassType[ A ](pt)
 	}
 
-	def fromType(t: java.lang.reflect.Type): Type[ _ ] = t match {
+	private[ parameterized ] def fromType(t: java.lang.reflect.Type): Type[ _ ] = t match {
 		case t: java.lang.reflect.ParameterizedType => fromParameterizedType(t)
 		case t: Class[ _ ] => fromClass(t)
+		case x => throw new RuntimeException(x.getClass + " not yet supported")
+	}
+
+	private[ parameterized ] def actualize(t: java.lang.reflect.Type, ownerType: RefType[ _ ]) = t match {
+		case t: java.lang.reflect.TypeVariable[ _ ] => ownerType.actualTypeOf(t.getName)
+		case t: java.lang.reflect.ParameterizedType => Type.fromParameterizedType(t)
+		case t: Class[ _ ] => Type.fromClass(t)
+		case x => throw new RuntimeException(x.getClass + " not yet supported")
 	}
 }
 

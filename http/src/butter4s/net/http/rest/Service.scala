@@ -25,12 +25,10 @@
 package butter4s.net.http.rest
 
 import butter4s.lang.reflect._
-import butter4s.lang._
 import butter4s.io._
 import butter4s.json.Binder
 import butter4s.logging.Logging
 import java.lang.reflect.InvocationTargetException
-import butter4s.net.http.rest.Method.Constants
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
@@ -38,22 +36,12 @@ import butter4s.net.http.rest.Method.Constants
 
 class ImmediateResponse(val code: Int, val message: String) extends RuntimeException(message)
 
-trait ContentProducer {
-	def marshal(content: Any): String
-}
-
-trait ParameterConvertor {
-	def convert(value: String, t: parameterized.Type[ _ ])
-}
-
 object Service {
 	private[ rest ] var producers = Map[ String, Any => String ](
 		MimeType.TEXT_JAVASCRIPT -> ( content => String.valueOf(content) ),
 		MimeType.TEXT_PLAIN -> ( content => String.valueOf(content) ),
 		MimeType.APPLICATION_JSON -> ( content => Binder.marshal(content) )
 	)
-
-	def registerContentProducer(contentType: String, cp: ContentProducer): Unit = registerContentProducer(contentType, cp.marshal(_))
 
 	def registerContentProducer(contentType: String, produce: Any => String) = producers += contentType -> produce
 
@@ -83,15 +71,14 @@ object Service {
 	)
 
 	def convert(value: String, hint: String, targetType: parameterized.Type[ _ ]) =
-		( if( hint == MimeType.APPLICATION_JAVA_CLASS ) converters.find{
+		( if( hint == MimeType.APPLICATION_JAVA_CLASS ) converters.find {
 			case (t, _) => t <:< targetType.rawType
 		}.get._2
 		else binders(hint) )(value, targetType)
 
-	def registerParameterBinder(typeHint: String, pc: ParameterConvertor): Unit = registerParameterBinder(typeHint, pc.convert(_, _))
-
 	def registerParameterBinder(typeHint: String, convert: (String, parameterized.Type[ _ ]) => Any) = binders += typeHint -> convert
 
+	private[ rest ] var apis = Map[ String, (Request, parameterized.ClassType[AnyRef]) => String ]("prototype" -> PrototypeApi, "dojo" -> DojoApi)
 }
 
 trait Service extends Logging {
@@ -102,20 +89,20 @@ trait Service extends Logging {
 		log.debug("invoke " + request)
 		parameterized.Type.fromClass(getClass.asInstanceOf[ Class[ Service ] ]).as[ parameterized.ClassType ].methods.find(Request.methodMatches(request.requestLine, request.httpMethod, _)) match {
 			case None => respond(NOT_FOUND, request.requestLine + " is unbound")
-			case Some(method) => method.rawMethod.annotation[ Method ] match {
-				case None => respond(NOT_FOUND, method.rawMethod.name + " is not exposed")
+			case Some(method) => method.raw.annotation[ Method ] match {
+				case None => respond(NOT_FOUND, method.raw.name + " is not exposed")
 				case Some(restMethod) =>
-					val result = method.rawMethod.invoke(this, method.parameters.map(p => {
+					val result = method.raw.invoke(this, method.parameters.map(p => {
 						log.debug(p)
-						if( p.rawParameter.rawType <:< typeOf[ Request ].rawType ) request
-						else if( p.rawParameter.rawType <:< typeOf[ List[ _ ] ].rawType ) p.rawParameter.annotation[ Param ] match {
-							case None => respond(INTERNAL_SERVER_ERROR, "method parameter of type " + p.rawParameter.rawType + " is not annotated properly")
+						if( p.raw.rawType <:< typeOf[ Request ].rawType ) request
+						else if( p.raw.rawType <:< typeOf[ List[ _ ] ].rawType ) p.raw.annotation[ Param ] match {
+							case None => respond(INTERNAL_SERVER_ERROR, "method parameter of type " + p.raw.rawType + " is not annotated properly")
 							case Some(restParam) => request.parameters(restParam.name).map(Service.convert(_, restParam.typeHint, p.actualType.arguments(0)))
-						} else if( p.rawParameter.rawType <:< typeOf[ Option[ _ ] ].rawType ) p.rawParameter.annotation[ Param ] match {
-							case None => respond(INTERNAL_SERVER_ERROR, "method parameter of type " + p.rawParameter.rawType + " is not annotated properly")
+						} else if( p.raw.rawType <:< typeOf[ Option[ _ ] ].rawType ) p.raw.annotation[ Param ] match {
+							case None => respond(INTERNAL_SERVER_ERROR, "method parameter of type " + p.raw.rawType + " is not annotated properly")
 							case Some(restParam) => request.parameter(restParam.name).map(Service.convert(_, restParam.typeHint, p.actualType.arguments(0)))
-						} else p.rawParameter.annotation[ Param ] match {
-							case None => respond(INTERNAL_SERVER_ERROR, "method parameter of type " + p.rawParameter.rawType + " is not annotated properly")
+						} else p.raw.annotation[ Param ] match {
+							case None => respond(INTERNAL_SERVER_ERROR, "method parameter of type " + p.raw.rawType + " is not annotated properly")
 							case Some(restParam) => Service.convert(( restParam.from match {
 								case Param.From.BODY => Some(request.body.readAs[ String ])
 								case Param.From.QUERY => request.parameter(restParam.name)
@@ -150,164 +137,32 @@ trait Service extends Logging {
 	})
 
 	@Method(produces = "text/plain", info = "this information")
-	def _info(request: Request) = parameterized.Type.fromClass(getClass).as[ parameterized.ClassType ].methods.view.filter(m => m.rawMethod.annotatedWith[ Method ]).map{
+	def _info(request: Request) = parameterized.Type.fromClass(getClass).as[ parameterized.ClassType ].methods.view.filter(m => m.raw.annotatedWith[ Method ]).map {
 		method => {
-			val restMethod = method.rawMethod.annotation[ Method ].get
-			val params = method.parameters.view.filter(_.rawParameter.annotatedWith[ Param ])
-			"method:\t" + method.rawMethod.name + "\n" +
+			val restMethod = method.raw.annotation[ Method ].get
+			val params = method.parameters.view.filter(_.raw.annotatedWith[ Param ])
+			"method:\t" + method.raw.name + "\n" +
 					"info:\t" + restMethod.info + "\n" +
-					"path:\t" + request.context.serviceLocation + ( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else restMethod.path ) + "\n" +
+					"path:\t" + request.context.serviceLocation + ( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.raw.name else restMethod.path ) + "\n" +
 					"http:\t" + restMethod.httpMethod.mkString(",") + "\n" +
-					"query-params:\n" + params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.QUERY).map{
+					"query-params:\n" + params.filter(_.raw.annotation[ Param ].get.from == Param.From.QUERY).map {
 				param => {
-					val restParam = param.rawParameter.annotation[ Param ].get
+					val restParam = param.raw.annotation[ Param ].get
 					"\t" + restParam.name + " : " + param.actualType.toTypeString + "\n"
 				}
 			}.mkString +
-					"body:\t" + params.find(_.rawParameter.annotation[ Param ].get.from == Param.From.BODY).map(_.actualType.toTypeString).orElse(Some("none")).get
+					"body:\t" + params.find(_.raw.annotation[ Param ].get.from == Param.From.BODY).map(_.actualType.toTypeString).orElse(Some("none")).get
 		}
 	}.mkString("\n\n\n") + "\n"
 
-//	@Method(produces = "text/javascript", info = "prototypejs.org AJAX RPC")
-//	def _apiPrototype(request: Request) = "var api_Prototype_" + request.context.serviceName + " = { \n\tsync: {\n" + parameterized.Type.fromClass(getClass).as[ parameterized.ClassType ].methods.view.filter(m => m.rawMethod.annotatedWith[ Method ] && m.rawMethod.name != "_api").map(
-//		method => {
-//			val params = method.parameters.view.filter(_.rawParameter.annotatedWith[ Param ])
-//			val queryParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.QUERY)
-//			val pathParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.PATH)
-//			val bodyParam = params.find(_.rawParameter.annotation[ Param ].get.from == Param.From.BODY)
-//			val restMethod = method.rawMethod.annotation[ Method ].get
-//			"\t\t" + method.rawMethod.name + ": function (" + params.map(_.rawParameter.annotation[ Param ].get.name).mkString(",") + ") {\n" +
-//					"\t\t\tvar result, error;\n" +
-//					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
-//					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "', {\n" +
-//					"\t\t\t\tparameters: {\n" +
-//					queryParams.map(p => {
-//						val restParam = p.rawParameter.annotation[ Param ].get
-//						"\t\t\t\t\t" + restParam.name + ":" + ( if( p.rawParameter.rawType <:< typeOf[ List[ _ ] ].rawType ) restParam.name + ".collect(function(x){return " +
-//								wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", "x", ")") + ";})"
-//						else
-//							wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", restParam.name, ")") )
-//					}).mkString(",\n") + "\n" +
-//					"\t\t\t\t},\n" +
-//					"\t\t\t\tmethod: '" + restMethod.httpMethod()(0) + "',\n" +
-//					"\t\t\t\tevalJSON: " + MimeType.isJson(restMethod.produces) + ",\n" +
-//					"\t\t\t\tevalJS: false,\n" +
-//					"\t\t\t\tasynchronous: false,\n" +
-//					( if( bodyParam.isDefined ) "\t\t\t\tpostBody: " + bodyParam.get.rawParameter.annotation[ Param ].get.name + ",\n" else "" ) +
-//					"\t\t\t\tonSuccess: function( response ) {\n" +
-//					( if( MimeType.isJson(restMethod.produces) ) "\t\t\t\t\tresult = response.responseJSON;\n"
-//					else if( restMethod.produces == Constants.NONE ) "\t\t\t\t\tresult = response.status;\n" else "\t\t\t\t\tresult = response.responseText;\n" ) +
-//					"\t\t\t\t},\n" +
-//					"\t\t\t\tonFailure: function( response ) { \n" +
-//					"\t\t\t\t\terror = response.statusText;\n" +
-//					"\t\t\t\t}\n" +
-//					"\t\t\t});\n" +
-//					"\t\t\tif (error) throw error; else return result;\n" +
-//					"\t\t}"
-//		}).mkString(",\n\n") + "\n\t},\n\tasync: {\n" + parameterized.Type.fromClass(getClass).as[ parameterized.ClassType ].methods.view.filter(m => m.rawMethod.annotatedWith[ Method ] && m.rawMethod.name != "_api").map(
-//		method => {
-//			val params = method.parameters.view.filter(_.rawParameter.annotatedWith[ Param ])
-//			val queryParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.QUERY)
-//			val pathParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.PATH)
-//			val bodyParam = params.find(_.rawParameter.annotation[ Param ].get.from == Param.From.BODY)
-//			val restMethod = method.rawMethod.annotation[ Method ].get
-//			"\t\t" + method.rawMethod.name + ": function (" + ( params.map(_.rawParameter.annotation[ Param ].get.name) :+ "succeed" :+ "failed" ).mkString(",") + ") {\n" +
-//					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
-//					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "', {\n" +
-//					"\t\t\t\tparameters: {\n" +
-//					queryParams.map(p => {
-//						val restParam = p.rawParameter.annotation[ Param ].get
-//						"\t\t\t\t\t" + restParam.name + ":" + ( if( p.rawParameter.rawType <:< typeOf[ List[ _ ] ].rawType ) restParam.name + ".collect(function(x){return " +
-//								wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", "x", ")") + ";})"
-//						else
-//							wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("Object.toJSON(", restParam.name, ")") )
-//					}).mkString(",\n") + "\n" +
-//					"\t\t\t\t},\n" +
-//					"\t\t\t\tmethod: '" + restMethod.httpMethod()(0) + "',\n" +
-//					"\t\t\t\tevalJSON: " + MimeType.isJson(restMethod.produces) + ",\n" +
-//					"\t\t\t\tevalJS: false,\n" +
-//					( if( bodyParam.isDefined ) "\t\t\t\tpostBody: " + bodyParam.get.rawParameter.annotation[ Param ].get.name + ",\n" else "" ) +
-//					"\t\t\t\tonSuccess: function( response ) {\n" +
-//					"\t\t\t\t\tif (succeed) succeed(" +
-//					( if( MimeType.isJson(restMethod.produces) ) "response.responseJSON"
-//					else if( restMethod.produces == Constants.NONE ) "response.status" else "response.responseText" ) + ");\n" +
-//					"\t\t\t\t},\n" +
-//					"\t\t\t\tonFailure: function( response ) { \n" +
-//					"\t\t\t\t\tif (failed) failed(response.statusText); else alert(response.statusText);\n" +
-//					"\t\t\t\t}\n" +
-//					"\t\t\t});\n" +
-//					"\t\t}"
-//		}).mkString(",\n\n") + "\n\t}\n}"
-
-  @Method(produces = "text/javascript", info = "dojotoolkit.org AJAX RPC")
-	def _api(request: Request) = "var api_dojo_" + request.context.serviceName + " = { \n\tsync: {\n" + parameterized.Type.fromClass(getClass).as[ parameterized.ClassType ].methods.view.filter(m => m.rawMethod.annotatedWith[ Method ] && m.rawMethod.name != "_api").map(
-		method => {
-			val params = method.parameters.view.filter(_.rawParameter.annotatedWith[ Param ])
-			val queryParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.QUERY)
-			val pathParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.PATH)
-			val bodyParam = params.find(_.rawParameter.annotation[ Param ].get.from == Param.From.BODY)
-			val restMethod = method.rawMethod.annotation[ Method ].get
-			"\t\t" + method.rawMethod.name + ": function (" + params.map(_.rawParameter.annotation[ Param ].get.name).mkString(",") + ") {\n" +
-					"\t\t\tvar result, error;\n" +
-					"\t\t\tdojo.xhr( '" + restMethod.httpMethod()(0) + "', {\n" +
-          "\t\t\t\turl: '" + request.context.serviceLocation +
-					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "',\n" +
-					"\t\t\t\tcontent: {\n" +
-					queryParams.map(p => {
-						val restParam = p.rawParameter.annotation[ Param ].get
-						"\t\t\t\t\t" + restParam.name + ":" + ( if( p.rawParameter.rawType <:< typeOf[ List[ _ ] ].rawType ) "dojo.map( " + restParam.name + ", function(x){return " +
-								wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("JSON.stringify(", "x", ")") + ";})"
-						else
-							wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("JSON.stringify(", restParam.name, ")") )
-					}).mkString(",\n") + "\n" +
-					"\t\t\t\t},\n" +
-					"\t\t\t\thandleAs: " + (if (MimeType.isJson(restMethod.produces)) "'json'" else "'text'") + ",\n" +
-					"\t\t\t\tsync: true,\n" +
-           //FIXME: postData or putData?
-					( if( bodyParam.isDefined ) "\t\t\t\tpostData: " + bodyParam.get.rawParameter.annotation[ Param ].get.name + ",\n" else "" ) +
-					"\t\t\t\tload: function( response ) {\n" +
-					"\t\t\t\t\tresult = response;\n" +
-					"\t\t\t\t},\n" +
-					"\t\t\t\terror: function( response ) { \n" +
-					"\t\t\t\t\terror = response.message;\n" +
-					"\t\t\t\t}\n" +
-					"\t\t\t});\n" +
-					"\t\t\tif (error) throw error; else return result;\n" +
-					"\t\t}"
-		}).mkString(",\n\n") + "\n\t},\n\tasync: {\n" + parameterized.Type.fromClass(getClass).as[ parameterized.ClassType ].methods.view.filter(m => m.rawMethod.annotatedWith[ Method ] && m.rawMethod.name != "_api").map(
-		method => {
-			val params = method.parameters.view.filter(_.rawParameter.annotatedWith[ Param ])
-			val queryParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.QUERY)
-			val pathParams = params.filter(_.rawParameter.annotation[ Param ].get.from == Param.From.PATH)
-			val bodyParam = params.find(_.rawParameter.annotation[ Param ].get.from == Param.From.BODY)
-			val restMethod = method.rawMethod.annotation[ Method ].get
-			"\t\t" + method.rawMethod.name + ": function (" + ( params.map(_.rawParameter.annotation[ Param ].get.name) :+ "succeed" :+ "failed" ).mkString(",") + ") {\n" +
-					"\t\t\treturn dojo.xhr( '" + restMethod.httpMethod()(0) + "', {\n" +
-					"\t\t\t\tcontent: {\n" +
-					queryParams.map(p => {
-						val restParam = p.rawParameter.annotation[ Param ].get
-						"\t\t\t\t\t" + restParam.name + ":" + ( if( p.rawParameter.rawType <:< typeOf[ List[ _ ] ].rawType ) "dojo.map( " + restParam.name + ", function(x){return " +
-								wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("JSON.stringify(", "x", ")") + ";})"
-						else
-							wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("JSON.stringify(", restParam.name, ")") )
-					}).mkString(",\n") + "\n" +
-					"\t\t\t\t},\n" +
-					"\t\t\t\turl: '" + request.context.serviceLocation +
-					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.rawMethod.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "',\n" +
-					"\t\t\t\thandleAs: " + (if (MimeType.isJson(restMethod.produces)) "'json'" else "'text'") + ",\n" +
-          //FIXME: postData or putData?
-					( if( bodyParam.isDefined ) "\t\t\t\tpostData: " + bodyParam.get.rawParameter.annotation[ Param ].get.name + ",\n" else "" ) +
-					"\t\t\t\tload: function( response ) {\n" +
-					"\t\t\t\t\tif (succeed) succeed(" +
-					( if( MimeType.isJson(restMethod.produces) ) "response"
-					else if( restMethod.produces == Constants.NONE ) "response" else "response" ) + ");\n" +
-					"\t\t\t\t},\n" +
-					"\t\t\t\terror: function( response ) { \n" +
-					"\t\t\t\t\tif (failed) failed(response.message); else alert(response.message);\n" +
-					"\t\t\t\t}\n" +
-					"\t\t\t});\n" +
-					"\t\t}"
-		}).mkString(",\n\n") + "\n\t}\n}"
+	@Method(produces = "text/javascript", info = "JavaScript API")
+	def _api(request: Request, @Param(name = "for") name: Option[ String ]) = {
+		val apiFor = name.getOrElse("prototype")
+		Service.apis.get(apiFor) match {
+			case Some(api) => api(request, parameterized.Type.fromClass(getClass.asInstanceOf[Class[AnyRef]]).as[ parameterized.ClassType ])
+			case _ => respond(NOT_FOUND, "unknown API " + apiFor)
+		}
+	}
 
 	def respond(code: Int, reason: String) = throw new ImmediateResponse(code, reason)
 

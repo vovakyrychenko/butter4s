@@ -31,74 +31,74 @@ import collection.mutable
 import mutable.ArrayBuffer
 import butter4s.net.http.{HttpMethod, rest}
 import java.net.URLDecoder
-import org.apache.http.entity.{ByteArrayEntity, ContentProducer, EntityTemplate}
-import java.io.{ByteArrayOutputStream, ByteArrayInputStream, OutputStreamWriter, OutputStream, Writer}
+import org.apache.http.entity.{ContentProducer, EntityTemplate}
+import java.io.{ByteArrayInputStream, OutputStreamWriter, OutputStream, Writer}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-class EmbeddedServiceAdapter( name: String, service: rest.Service ) extends HttpRequestHandler {
-	def handle( req: HttpRequest, resp: HttpResponse, ctx: HttpContext ) =
-		service.perform( new EmbeddedRequestAdapter( req, new EmbeddedContext( name ) ), new EmbeddedResponseAdapter( resp ) )
+class EmbeddedServiceAdapter(name: String, location: String, service: rest.Service) extends HttpRequestHandler {
+	def handle(req: HttpRequest, resp: HttpResponse, ctx: HttpContext) =
+		service.perform(new EmbeddedRequestAdapter(req, new EmbeddedContext(name, location)), new EmbeddedResponseAdapter(resp))
 }
 
-class EmbeddedContext( val serviceName: String ) extends rest.Context {
-	val serviceLocation = "/" + serviceName
-}
+class EmbeddedContext(val serviceName: String, val serviceLocation: String) extends rest.Context
 
 object EmbeddedRequestAdapter {
-	def params( req: HttpRequest ) = if ( req.getFirstHeader( "Content-Type" ) != null && req.getFirstHeader( "Content-Type" ).getValue.startsWith( "application/x-www-form-urlencoded" ) && req.isInstanceOf[HttpEntityEnclosingRequest] )
-		parse( req.getRequestLine.getUri.substringAfter( "?" ) ) ++ parse( EntityUtils.toString( req.asInstanceOf[HttpEntityEnclosingRequest].getEntity ) )
-	else parse( req.getRequestLine.getUri.substringAfter( "?" ) )
+	def params(req: HttpRequest) = if( req.getFirstHeader("Content-Type") != null && req.getFirstHeader("Content-Type").getValue.startsWith("application/x-www-form-urlencoded") && req.isInstanceOf[ HttpEntityEnclosingRequest ] )
+		parse(req.getRequestLine.getUri.substringAfter("?")) ++ parse(EntityUtils.toString(req.asInstanceOf[ HttpEntityEnclosingRequest ].getEntity))
+	else parse(req.getRequestLine.getUri.substringAfter("?"))
 
-	def parse( params: String ): mutable.Map[String, ArrayBuffer[String]] =
-		if ( params != null && params != "" )
-			params.split( "&" ).map( _.span( _ != '=' ).map {case (n, v) => (n, URLDecoder.decode( v.substring( 1 ), "UTF-8" ))} ).toMultiArrayMap
-		else mutable.Map[String, ArrayBuffer[String]]()
+	def parse(params: String): mutable.Map[ String, ArrayBuffer[ String ] ] =
+		if( params != null && params != "" )
+			params.split("&").map(_.span(_ != '=').map {
+				case (n, v) => (n, URLDecoder.decode(v.substring(1), "UTF-8"))
+			}).toMultiArrayMap
+		else mutable.Map[ String, ArrayBuffer[ String ] ]()
 }
 
-class EmbeddedRequestAdapter( req: HttpRequest, val context: rest.Context ) extends rest.Request {
-	private[embedded] lazy val params = EmbeddedRequestAdapter.params( req )
+class EmbeddedRequestAdapter(req: HttpRequest, val context: rest.Context) extends rest.Request {
+	private[ embedded ] lazy val params = EmbeddedRequestAdapter.params(req)
 
-	def parameters( name: String ) = params.get( name ) match {
+	def parameters(name: String) = params.get(name) match {
 		case None => Nil
-		case Some( array ) => array.toList
+		case Some(array) => array.toList
 	}
 
-	def parameter( name: String ) = params.get( name ).map( b => if ( b.size > 0 ) b( 0 ) else null )
+	def parameter(name: String) = params.get(name).map(b => if( b.size > 0 ) b(0) else null)
 
-	lazy val requestLine = req.getRequestLine.getUri.substringBefore( "?" ).substring( context.serviceLocation.length )
+	lazy val requestLine = req.getRequestLine.getUri.substringBefore("?").substring(context.serviceLocation.length)
 
-	lazy val httpMethod = HttpMethod.valueOf( req.getRequestLine.getMethod.toUpperCase )
+	lazy val httpMethod = HttpMethod.valueOf(req.getRequestLine.getMethod.toUpperCase)
 
 	lazy val session = new EmbeddedSession
 
-	lazy val body = if ( req.isInstanceOf[HttpEntityEnclosingRequest] ) req.asInstanceOf[HttpEntityEnclosingRequest].getEntity.getContent else new ByteArrayInputStream( Array[Byte]() )
+	lazy val body = if( req.isInstanceOf[ HttpEntityEnclosingRequest ] ) req.asInstanceOf[ HttpEntityEnclosingRequest ].getEntity.getContent else new ByteArrayInputStream(Array[ Byte ]())
 }
 
-class EmbeddedResponseAdapter( resp: HttpResponse ) extends rest.Response {
-	def status( code: Int, message: String ) = {
-		resp.setStatusCode( code )
-		resp.setReasonPhrase( message )
+class EmbeddedResponseAdapter(resp: HttpResponse) extends rest.Response {
+	def status(code: Int, message: String) = {
+		resp.setStatusCode(code)
+		resp.setReasonPhrase(message)
 	}
 
-	def content( ct: String, what: ( => Writer ) => Unit ) = resp.setEntity( new EntityTemplate( new ContentProducer() {
-		def writeTo( out: OutputStream ) = {
-			val writer = new OutputStreamWriter( out )
-			what( writer )
+	def content(ct: String, what: ( => Writer ) => Unit) = resp.setEntity(new EntityTemplate(new ContentProducer() {
+		def writeTo(out: OutputStream) = {
+			val writer = new OutputStreamWriter(out)
+			what(writer)
 			writer.flush
 		}
-	} ) {
-		setContentType( ct )
-	} )
+	}) {
+		setContentType(ct)
+	})
 }
 
 class EmbeddedSession extends rest.Session {
-	private var attributes = Map[String, Any]()
+	private var attributes = Map[ String, Any ]()
 
-	def invalidate = attributes = Map[String, Any]()
+	def invalidate = attributes = Map[ String, Any ]()
 
-	def update( name: String, value: Any ) = attributes += name -> value
+	def update(name: String, value: Any) = attributes += name -> value
 
-	def apply[A]( name: String ) = attributes.get( name ).asInstanceOf[Option[A]]
+	def apply[ A ](name: String) = attributes.get(name).asInstanceOf[ Option[ A ] ]
 }

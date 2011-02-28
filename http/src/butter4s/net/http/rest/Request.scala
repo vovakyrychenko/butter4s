@@ -44,11 +44,11 @@ object Request {
 			case group => compile( mapping ).findFirstMatchIn( requestLine ).map( _.group( group + 1 ) )
 		}
 
-	def methodMatches( requestLine: String, httpMethod: HttpMethod, m: butter4s.lang.reflect.parameterized.Method[_, _] ) = m.rawMethod.annotation[Method] match {
+	def methodMatches( requestLine: String, httpMethod: HttpMethod, m: butter4s.lang.reflect.parameterized.Method[_, _] ) = m.raw.annotation[Method] match {
 		case None => false
 		case Some( restMethod ) =>
 			if ( !restMethod.httpMethod.contains( httpMethod ) ) false
-			else if ( restMethod.path == Method.Constants.DEFAULT ) requestLine == "/" + m.rawMethod.name
+			else if ( restMethod.path == Method.Constants.DEFAULT ) requestLine == "/" + m.raw.name
 			else compile( restMethod.path ).findFirstMatchIn( requestLine ).isDefined
 	}
 }

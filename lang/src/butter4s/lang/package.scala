@@ -31,31 +31,33 @@ import lang.Predicate.P
  */
 
 package object lang {
-	implicit def identity[A]( a: A ) = a
+	implicit def identity[ A ](a: A) = a
 
-	implicit def toPredicate[A]( f: A => Boolean ): P[A] = cast( f )
+	implicit def toPredicate[ A ](f: A => Boolean): P[ A ] = cast(f)
 
-	def not[A]( f: A => Boolean ) = f.not
+	def not[ A ](f: A => Boolean) = f.not
 
-	def wrapIf( cond: Boolean )( left: => String, value: Any, right: => String ) = if ( cond ) left + value + right else "" + value
+	def wrapIf(cond: Boolean)(left: => String, value: Any, right: => String) = if( cond ) left + value + right else "" + value
 
-	class RichTuple2[A, B]( t: (A, B) ) {
-		def map[C, D]( f: ( (A, B) ) => (C, D) ) = f( t )
+	class RichTuple2[ A, B ](t: (A, B)) {
+		def map[ C, D ](f: ( (A, B) ) => (C, D)) = f(t)
 	}
 
-	implicit def toRichTuple2[A, B]( t: (A, B) ) = new RichTuple2( t )
+	implicit def toRichTuple2[ A, B ](t: (A, B)) = new RichTuple2(t)
 
-	implicit def toRichTraversableOnce[A] = collection.toRichTraversableOnce[A] _
+	implicit def toRichTraversableOnce[ A ] = collection.toRichTraversableOnce[ A ] _
 
-	implicit def toRichArray[A] = collection.toRichArray[A] _
+	implicit def toRichArray[ A ] = collection.toRichArray[ A ] _
 
-	class RichString( s: String ) {
-		def substringAfter( delimiter: String ) = if ( s.contains( delimiter ) ) s.substring( s.indexOf( delimiter ) + 1 ) else ""
+	class RichString(s: String) {
+		def substringAfter(delimiter: String) = if( s.contains(delimiter) ) s.substring(s.indexOf(delimiter) + 1) else ""
 
-		def substringAfterLast( delimiter: String ) = if ( s.contains( delimiter ) ) s.substring( s.lastIndexOf( delimiter ) + 1 ) else ""
+		def substringAfterLast(delimiter: String) = if( s.contains(delimiter) ) s.substring(s.lastIndexOf(delimiter) + 1) else ""
 
-		def substringBefore( delimiter: String ) = if ( s.contains( delimiter ) ) s.substring( 0, s.indexOf( delimiter ) ) else s
+		def substringBefore(delimiter: String) = if( s.contains(delimiter) ) s.substring(0, s.indexOf(delimiter)) else s
+
+		def trimBeforeLast(delimiter: String) = if( s.contains(delimiter) ) s.substring(s.lastIndexOf(delimiter) + 1) else s
 	}
 
-	implicit def toRichString( s: String ) = new RichString( s )
+	implicit def toRichString(s: String) = new RichString(s)
 }

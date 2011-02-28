@@ -143,11 +143,11 @@ class BasicBinder {
 
 	def unmarshalObject( targetType: parameterized.ClassType[AnyRef], map: Map[String, Any] ): AnyRef = {
 		val obj = targetType.newInstance
-		for ( (name, value) <- map ) targetType.fields.find( _.rawField.name == name ) match {
+		for ( (name, value) <- map ) targetType.fields.find( _.raw.name == name ) match {
 			case None => throw new BindingException( "field " + name + " is not declared in " + targetType )
-			case Some( field ) => field.rawField.accessible {
-				field.rawField.set( obj,
-					if ( field.rawField.annotation[Element].flatMap( ann => if ( ann.useTypeHint ) Some( true ) else None ).isDefined )
+			case Some( field ) => field.raw.accessible {
+				field.raw.set( obj,
+					if ( field.raw.annotation[Element].flatMap( ann => if ( ann.useTypeHint ) Some( true ) else None ).isDefined )
 						unmarshalUnknown( fromTypeHint( value.asInstanceOf[Map[String, Any]]( "typeHint" ).asInstanceOf[String] ), value.asInstanceOf[Map[String, Any]]( "value" ) )
 					else unmarshalUnknown( field.actualType, value ) )
 			}
@@ -170,9 +170,9 @@ class BasicBinder {
 	}
 
 	def unmarshalField[T <: parameterized.RefType[A], A]( field: parameterized.Field[T, A], obj: A, value: Any ) =
-		field.rawField.accessible {
-			field.rawField.set( obj,
-				if ( field.rawField.annotation[Element].flatMap( ann => if ( ann.useTypeHint ) Some( true ) else None ).isDefined )
+		field.raw.accessible {
+			field.raw.set( obj,
+				if ( field.raw.annotation[Element].flatMap( ann => if ( ann.useTypeHint ) Some( true ) else None ).isDefined )
 					unmarshalUnknown( fromTypeHint( value.asInstanceOf[Map[String, Any]]( "typeHint" ).asInstanceOf[String] ), value.asInstanceOf[Map[String, Any]]( "value" ) )
 				else unmarshalUnknown( field.actualType, value ) )
 		}
