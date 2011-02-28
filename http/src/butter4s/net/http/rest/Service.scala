@@ -149,7 +149,7 @@ trait Service extends Logging {
 			throw e
 	})
 
-	@Method(produces = "text/plain", info = "this inforamtion")
+	@Method(produces = "text/plain", info = "this information")
 	def _info(request: Request) = parameterized.Type.fromClass(getClass).as[ parameterized.ClassType ].methods.view.filter(m => m.rawMethod.annotatedWith[ Method ]).map{
 		method => {
 			val restMethod = method.rawMethod.annotation[ Method ].get
