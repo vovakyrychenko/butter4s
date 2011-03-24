@@ -9,7 +9,7 @@ import java.io.{IOException, FileOutputStream}
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 
-abstract class FsNode(_path: String) {
+abstract class FsNode(_path: String) extends Ordered[ FsNode ] {
 	val impl = new java.io.File(_path)
 
 	def exists = impl.exists
@@ -21,15 +21,17 @@ abstract class FsNode(_path: String) {
 	def delete: Unit
 
 	override def toString = impl.toString
+
+	def compare(that: FsNode) = this.name.compare(that.name)
 }
 
 
 class File(_path: String) extends FsNode(_path) {
-	def read[R](implicit convert: FromArrayConversion[R]) = using(new FileInputStream(path)) {
-		_.readAs[R]
+	def read[ R ](implicit convert: FromArrayConversion[ R ]) = using(new FileInputStream(path)) {
+		_.readAs[ R ]
 	}
 
-	def write[P](content: P)(implicit convert: ToArrayConversion[P]) = {
+	def write[ P ](content: P)(implicit convert: ToArrayConversion[ P ]) = {
 		parent.create
 		using(new FileOutputStream(impl)) {
 			_.write(content)
@@ -43,7 +45,7 @@ class File(_path: String) extends FsNode(_path) {
 	lazy val parent = new Directory(impl.getParent)
 }
 
-class Directory(_path: String) extends FsNode(_path) with TraversableLike[FsNode, List[FsNode]] {
+class Directory(_path: String) extends FsNode(_path) with TraversableLike[ FsNode, List[ FsNode ] ] {
 	private def items = impl.listFiles match {
 		case null => Nil
 		case xs => xs.view.map(file => if( file.isDirectory ) new Directory(file.getPath) else new File(file.getPath))
@@ -51,7 +53,7 @@ class Directory(_path: String) extends FsNode(_path) with TraversableLike[FsNode
 
 	def create = impl.mkdirs
 
-	def foreach[U](f: FsNode => U): Unit = items.foreach(f)
+	def foreach[ U ](f: FsNode => U): Unit = items.foreach(f)
 
 	def clear = this.foreach(_.delete)
 
@@ -60,5 +62,5 @@ class Directory(_path: String) extends FsNode(_path) with TraversableLike[FsNode
 		if( !impl.delete ) throw new IOException("could not delete " + path)
 	}
 
-	protected[this] def newBuilder: Builder[FsNode, List[FsNode]] = new ListBuffer[FsNode]
+	protected[ this ] def newBuilder: Builder[ FsNode, List[ FsNode ] ] = new ListBuffer[ FsNode ]
 }
