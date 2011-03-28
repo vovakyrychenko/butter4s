@@ -57,10 +57,7 @@ class Server(port: Int, local: Boolean) extends Logging with Runnable {
 		processor.addInterceptor(new ResponseContent())
 		processor.addInterceptor(new ResponseConnControl())
 	}
-	private val httpService = new HttpService(processor, new DefaultConnectionReuseStrategy(), new DefaultHttpResponseFactory()) {
-		setParams(httpParams);
-		setHandlerResolver(registry);
-	}
+	private val httpService = new HttpService(processor, new DefaultConnectionReuseStrategy(), new DefaultHttpResponseFactory(), registry, httpParams)
 
 	registry.register("/htdocs/*", ClasspathWebInfHandler)
 
