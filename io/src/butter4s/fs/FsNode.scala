@@ -51,6 +51,8 @@ class Directory(_path: String) extends FsNode(_path) with TraversableLike[ FsNod
 		case xs => xs.view.map(file => if( file.isDirectory ) new Directory(file.getPath) else new File(file.getPath))
 	}
 
+	def apply[ N <: FsNode : Manifest ](name: String) = find(_.name == name).flatMap(node => if (manifest[N].erasure.isInstance(node)) Some(node.asInstanceOf[N]))
+
 	def create = impl.mkdirs
 
 	def foreach[ U ](f: FsNode => U): Unit = items.foreach(f)
