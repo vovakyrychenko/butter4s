@@ -29,19 +29,19 @@ import reflect.{raw, parameterized}
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
 package object reflect {
-	def safeCast[ C: Manifest ](obj: AnyRef) = if( manifest[ C ].erasure.isInstance(obj) ) Some(obj.asInstanceOf[ C ]) else None
-
 	def typeOf[ A: Manifest ] = parameterized.Type.fromManifest(manifest[ A ])
 
-	trait RichAny[ T ] {
+	abstract class RichAny[ T ](a: T) {
 		def typeOf: raw.Type[ T ]
+
+		def ifInstanceOf[ C: Manifest ] = if( manifest[ C ].erasure.isInstance(a) ) Some(a.asInstanceOf[ C ]) else None
 	}
 
-	implicit def toRichAnyRef[ T <: AnyRef ](a: T) = new RichAny[ T ] {
+	implicit def toRichAnyRef[ T <: AnyRef ](a: T) = new RichAny[ T ](a) {
 		def typeOf = raw.Type.fromClass(a.getClass.asInstanceOf[ Class[ T ] ])
 	}
 
-	implicit def toRichAnyVal[ T <: AnyVal ](a: T) = new RichAny[ T ] {
+	implicit def toRichAnyVal[ T <: AnyVal ](a: T) = new RichAny[ T ](a) {
 		def typeOf = a match {
 			case _: Int => raw.Type.fromClass(classOf[ Int ]).asInstanceOf[ raw.Type[ T ] ]
 			case _: Long => raw.Type.fromClass(classOf[ Long ]).asInstanceOf[ raw.Type[ T ] ]

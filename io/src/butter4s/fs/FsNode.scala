@@ -1,6 +1,7 @@
 package butter4s.fs
 
 import butter4s.io._
+import butter4s.lang.reflect._
 import collection.TraversableLike
 import collection.mutable.{Builder, ListBuffer}
 import java.io.{IOException, FileOutputStream}
@@ -51,7 +52,7 @@ class Directory(_path: String) extends FsNode(_path) with TraversableLike[ FsNod
 		case xs => xs.view.map(file => if( file.isDirectory ) new Directory(file.getPath) else new File(file.getPath))
 	}
 
-	def apply[ N <: FsNode : Manifest ](name: String) = find(_.name == name).flatMap(node => if (manifest[N].erasure.isInstance(node)) Some(node.asInstanceOf[N]))
+	def apply[ N <: FsNode : Manifest ](name: String) = find(_.name == name).flatMap(_.ifInstanceOf[N])
 
 	def create = impl.mkdirs
 
