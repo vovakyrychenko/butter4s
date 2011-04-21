@@ -78,7 +78,7 @@ object Service {
 
 	def registerParameterBinder(typeHint: String, convert: (String, parameterized.Type[ _ ]) => Any) = binders += typeHint -> convert
 
-	private[ rest ] var apis = Map[ String, (Request, parameterized.ClassType[AnyRef]) => String ]("prototype" -> PrototypeApi, "dojo" -> DojoApi)
+	private[ rest ] var apis = Map[ String, (Request, parameterized.ClassType[ AnyRef ], Boolean) => String ]("prototype" -> PrototypeApi, "dojo" -> DojoApi)
 }
 
 trait Service extends Logging {
@@ -156,10 +156,10 @@ trait Service extends Logging {
 	}.mkString("\n\n\n") + "\n"
 
 	@Method(produces = "text/javascript", info = "JavaScript API")
-	def _api(request: Request, @Param(name = "for") name: Option[ String ]) = {
+	def _api(request: Request, @Param(name = "for") name: Option[ String ], @Param(name = "qualified") qualified: Option[ Boolean ]) = {
 		val apiFor = name.getOrElse("prototype")
 		Service.apis.get(apiFor) match {
-			case Some(api) => api(request, parameterized.Type.fromClass(getClass.asInstanceOf[Class[AnyRef]]).as[ parameterized.ClassType ])
+			case Some(api) => api(request, parameterized.Type.fromClass(getClass.asInstanceOf[ Class[ AnyRef ] ]).as[ parameterized.ClassType ], qualified.isDefined && qualified.get)
 			case _ => respond(NOT_FOUND, "unknown API " + apiFor)
 		}
 	}

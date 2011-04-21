@@ -39,7 +39,9 @@ import java.io.{ByteArrayInputStream, OutputStreamWriter, OutputStream, Writer}
  */
 class EmbeddedServiceAdapter(name: String, location: String, service: rest.Service) extends HttpRequestHandler {
 	def handle(req: HttpRequest, resp: HttpResponse, ctx: HttpContext) =
-		service.perform(new EmbeddedRequestAdapter(req, new EmbeddedContext(name, location)), new EmbeddedResponseAdapter(resp))
+		service.perform(
+			new EmbeddedRequestAdapter(req, ctx.getAttribute(HttpContext.RESERVED_PREFIX + "base.url").asInstanceOf[ String ], new EmbeddedContext(name, location)),
+			new EmbeddedResponseAdapter(resp))
 }
 
 class EmbeddedContext(val serviceName: String, val serviceLocation: String) extends rest.Context
@@ -57,7 +59,7 @@ object EmbeddedRequestAdapter {
 		else mutable.Map[ String, ArrayBuffer[ String ] ]()
 }
 
-class EmbeddedRequestAdapter(req: HttpRequest, val context: rest.Context) extends rest.Request {
+class EmbeddedRequestAdapter(req: HttpRequest, val baseUrl: String, val context: rest.Context) extends rest.Request {
 	private[ embedded ] lazy val params = EmbeddedRequestAdapter.params(req)
 
 	def parameters(name: String) = params.get(name) match {

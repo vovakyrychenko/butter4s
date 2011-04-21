@@ -30,13 +30,13 @@ import butter4s.lang.concurrent._
 import org.apache.http.params.{CoreConnectionPNames, CoreProtocolPNames, BasicHttpParams}
 import org.apache.http.impl.{DefaultHttpServerConnection, DefaultHttpResponseFactory, DefaultConnectionReuseStrategy}
 import butter4s.net.http.rest
-import org.apache.http.protocol.{BasicHttpContext, HttpService, HttpRequestHandlerRegistry, ResponseConnControl, BasicHttpProcessor, ResponseDate, ResponseServer, ResponseContent}
 import java.net.{SocketTimeoutException, InetAddress, ServerSocket}
+import org.apache.http.protocol.{HttpContext, BasicHttpContext, HttpService, HttpRequestHandlerRegistry, ResponseConnControl, BasicHttpProcessor, ResponseDate, ResponseServer, ResponseContent}
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
-class Server(port: Int, local: Boolean) extends Logging with Runnable {
+class Server(port: Int, local: Boolean = true) extends Logging with Runnable {
 	private val serverSocket = if( local ) new ServerSocket(port, 0, InetAddress.getByName("localhost")) else new ServerSocket(port)
 	locally {
 		serverSocket.setSoTimeout(100)
@@ -78,22 +78,15 @@ class Server(port: Int, local: Boolean) extends Logging with Runnable {
 			}
 			async {
 				log.debug("accepted connection " + socket)
-				try
-					httpService.handleRequest(connection, new BasicHttpContext())
-				catch {
+				try httpService.handleRequest(connection, new BasicHttpContext() {
+					setAttribute(HttpContext.RESERVED_PREFIX + "base.url", "http://" + connection.getLocalAddress.getHostName + ":" + connection.getLocalPort)
+				}) catch {
 					case e => log.error(e, e)
-				}
-				finally {
-					connection.shutdown
-				}
+				} finally connection.shutdown
 			}
 		} catch {
 			case e: SocketTimeoutException =>
 		}
-	}
-
-	def stop = {
-
 	}
 }
 

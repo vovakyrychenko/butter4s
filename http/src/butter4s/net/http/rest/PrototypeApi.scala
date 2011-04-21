@@ -30,8 +30,8 @@ import butter4s.lang._
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com>
  */
-object PrototypeApi extends ( (Request, parameterized.ClassType[ AnyRef ]) => String ) {
-	def apply(request: Request, service: parameterized.ClassType[ AnyRef ]) = "/**\n * prototypejs.org AJAX RPC\n */\nvar api_" + request.context.serviceName +
+object PrototypeApi extends ( (Request, parameterized.ClassType[ AnyRef ], Boolean) => String ) {
+	def apply(request: Request, service: parameterized.ClassType[ AnyRef ], qualified: Boolean = false) = "/**\n * prototypejs.org AJAX RPC\n */\nvar api_" + request.context.serviceName +
 			" = { \n\tsync: {\n" + service.methods.view.filter(m => m.raw.annotatedWith[ Method ] && m.raw.name != "_api").map(
 		method => {
 			val params = method.parameters.view.filter(_.raw.annotatedWith[ Param ])
@@ -41,7 +41,7 @@ object PrototypeApi extends ( (Request, parameterized.ClassType[ AnyRef ]) => St
 			val restMethod = method.raw.annotation[ Method ].get
 			"\t\t" + method.raw.name + ": function (" + params.map(_.raw.annotation[ Param ].get.name).mkString(",") + ") {\n" +
 					"\t\t\tvar result, error;\n" +
-					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
+					"\t\t\tnew Ajax.Request( '" + ( if( qualified ) request.baseUrl else "" ) + request.context.serviceLocation +
 					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.raw.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
 					queryParams.map(p => {
@@ -75,7 +75,7 @@ object PrototypeApi extends ( (Request, parameterized.ClassType[ AnyRef ]) => St
 			val bodyParam = params.find(_.raw.annotation[ Param ].get.from == Param.From.BODY)
 			val restMethod = method.raw.annotation[ Method ].get
 			"\t\t" + method.raw.name + ": function (" + ( params.map(_.raw.annotation[ Param ].get.name) :+ "succeed" :+ "failed" ).mkString(",") + ") {\n" +
-					"\t\t\tnew Ajax.Request( '" + request.context.serviceLocation +
+					"\t\t\tnew Ajax.Request( '" + ( if( qualified ) request.baseUrl else "" ) + request.context.serviceLocation +
 					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.raw.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "', {\n" +
 					"\t\t\t\tparameters: {\n" +
 					queryParams.map(p => {

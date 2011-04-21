@@ -26,6 +26,7 @@ package butter4s.net.http.rest.servlet
 
 import javax.servlet.http.{HttpSession, HttpServletResponse, HttpServletRequest, HttpServlet}
 import java.io.Writer
+import java.net.URL
 import butter4s.net.http.{HttpMethod, rest}
 
 /**
@@ -60,6 +61,11 @@ class ServletRequestAdapter(req: HttpServletRequest, servlet: HttpServlet) exten
 	lazy val session = new ServletSessionAdapter(req.getSession)
 
 	lazy val body = req.getInputStream
+
+	lazy val baseUrl = {
+		val url = new URL(req.getRequestURL.toString)
+		url.getProtocol + "://" + url.getHost + ":" + url.getPort
+	}
 }
 
 class ServletContextAdapter(req: HttpServletRequest, servlet: HttpServlet) extends rest.Context {
@@ -69,7 +75,7 @@ class ServletContextAdapter(req: HttpServletRequest, servlet: HttpServlet) exten
 }
 
 class ServletSessionAdapter(s: HttpSession) extends rest.Session {
-	def apply[A](name: String) = Option(s.getAttribute(name).asInstanceOf[A])
+	def apply[ A ](name: String) = Option(s.getAttribute(name).asInstanceOf[ A ])
 
 	def update(name: String, value: Any) = s.setAttribute(name, value)
 
@@ -82,7 +88,7 @@ class ServletResponseAdapter(resp: HttpServletResponse) extends rest.Response {
 		resp.setStatus(code);
 	} else resp.sendError(code, message)
 
-	def content(contentType: String, what: (=> Writer) => Unit) = {
+	def content(contentType: String, what: ( => Writer ) => Unit) = {
 		resp.setContentType(contentType)
 		what(resp.getWriter)
 	}

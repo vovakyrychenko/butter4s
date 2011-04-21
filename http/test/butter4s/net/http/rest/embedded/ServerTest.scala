@@ -30,15 +30,21 @@ import java.lang.annotation.RetentionPolicy
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 object ServerTest extends Application {
-	val server = new Server( 8081, true )
-	server.add( "x/v/math", MathService )
+	val server = new Server(8081, false)
+	server.add("x/v/math", MathService)
 	server.run
 }
 
 object MathService extends rest.Service {
-	@rest.Method( produces = rest.MimeType.APPLICATION_JSON )
-	def sum( @rest.Param( name = "a" ) a: Int, @rest.Param( name = "b" ) b: List[Int], @rest.Param( name = "c" ) c: Option[Int], @rest.Param( name = "rp" ) rp: Option[RetentionPolicy] ) = {
-		println( rp )
-		a + b.sum + ( if ( c.isDefined ) c.get else 0 )
+	@rest.Method(produces = rest.MimeType.APPLICATION_JSON)
+	def sum(@rest.Param(name = "a") a: Int, @rest.Param(name = "b") b: List[ Int ], @rest.Param(name = "c") c: Option[ Int ], @rest.Param(name = "rp") rp: Option[ RetentionPolicy ]) = {
+		println(rp)
+		a + b.sum + ( if( c.isDefined ) c.get else 0 )
+	}
+
+	@rest.Method
+	def line(req: rest.Request) {
+		println(req.baseUrl)
+		println(req.context.serviceLocation)
 	}
 }

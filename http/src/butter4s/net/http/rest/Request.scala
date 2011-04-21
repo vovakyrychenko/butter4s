@@ -56,6 +56,8 @@ object Request {
 trait Request {
 	val requestLine: String
 
+	val baseUrl: String
+
 	val httpMethod: HttpMethod
 
 	val context: Context

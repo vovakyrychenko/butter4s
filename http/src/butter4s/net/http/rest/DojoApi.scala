@@ -31,8 +31,8 @@ import butter4s.lang._
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
-object DojoApi extends ( (Request, parameterized.ClassType[ AnyRef ]) => String ) {
-	def apply(request: Request, service: parameterized.ClassType[ AnyRef ]) = "/**\n * dojotoolkit.org AJAX RPC\n */\nvar api_" + request.context.serviceName + " = { \n\tsync: {\n" + service.methods.view.filter(m => m.raw.annotatedWith[ Method ] && m.raw.name != "_api").map(
+object DojoApi extends ( (Request, parameterized.ClassType[ AnyRef ], Boolean) => String ) {
+	def apply(request: Request, service: parameterized.ClassType[ AnyRef ], qualified: Boolean = false) = "/**\n * dojotoolkit.org AJAX RPC\n */\nvar api_" + request.context.serviceName + " = { \n\tsync: {\n" + service.methods.view.filter(m => m.raw.annotatedWith[ Method ] && m.raw.name != "_api").map(
 		method => {
 			val params = method.parameters.view.filter(_.raw.annotatedWith[ Param ])
 			val queryParams = params.filter(_.raw.annotation[ Param ].get.from == Param.From.QUERY)
@@ -42,7 +42,7 @@ object DojoApi extends ( (Request, parameterized.ClassType[ AnyRef ]) => String 
 			"\t\t" + method.raw.name + ": function (" + params.map(_.raw.annotation[ Param ].get.name).mkString(",") + ") {\n" +
 					"\t\t\tvar result, error;\n" +
 					"\t\t\tdojo.xhr( '" + restMethod.httpMethod()(0) + "', {\n" +
-					"\t\t\t\turl: '" + request.context.serviceLocation +
+					"\t\t\t\turl: '" + ( if( qualified ) request.baseUrl else "" ) + request.context.serviceLocation +
 					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.raw.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "',\n" +
 					"\t\t\t\tcontent: {\n" +
 					queryParams.map(p => {
@@ -84,7 +84,7 @@ object DojoApi extends ( (Request, parameterized.ClassType[ AnyRef ]) => String 
 							wrapIf(restParam.typeHint != MimeType.APPLICATION_JAVA_CLASS)("JSON.stringify(", restParam.name, ")") )
 					}).mkString(",\n") + "\n" +
 					"\t\t\t\t},\n" +
-					"\t\t\t\turl: '" + request.context.serviceLocation +
+					"\t\t\t\turl: '" + ( if( qualified ) request.baseUrl else "" ) + request.context.serviceLocation +
 					( if( restMethod.path == Method.Constants.DEFAULT ) "/" + method.raw.name else Request.filter(restMethod.path).replaceAll("\\{", "'+").replaceAll("\\}", "+'") ) + "',\n" +
 					"\t\t\t\thandleAs: " + ( if( MimeType.isJson(restMethod.produces) ) "'json'" else "'text'" ) + ",\n" +
 					//FIXME: postData or putData?
