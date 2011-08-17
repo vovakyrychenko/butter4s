@@ -29,6 +29,7 @@ import butter4s.io._
 import butter4s.json.Binder
 import butter4s.logging.Logging
 import java.lang.reflect.InvocationTargetException
+import java.lang.RuntimeException
 
 /**
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
@@ -73,7 +74,10 @@ object Service {
 	def convert(value: String, hint: String, targetType: parameterized.Type[ _ ]) =
 		( if( hint == MimeType.APPLICATION_JAVA_CLASS ) converters.find {
 			case (t, _) => t <:< targetType.rawType
-		}.get._2
+		} match {
+			case Some(x) => x._2
+			case None => throw new RuntimeException("undefined converter for type " + targetType)
+		}
 		else binders(hint) )(value, targetType)
 
 	def registerParameterBinder(typeHint: String, convert: (String, parameterized.Type[ _ ]) => Any) = binders += typeHint -> convert
@@ -156,7 +160,7 @@ trait Service extends Logging {
 	}.mkString("\n\n\n") + "\n"
 
 	@Method(produces = "text/javascript", info = "JavaScript API")
-	def _api(request: Request, @Param(name = "for") name: Option[ String ], @Param(name = "qualified") qualified: Option[ Boolean ]) = {
+	def _api(request: Request, @Param(name = "for") name: Option[ String ], @Param(name = "qualified") qualified: Option[ java.lang.Boolean ]) = {
 		val apiFor = name.getOrElse("prototype")
 		Service.apis.get(apiFor) match {
 			case Some(api) => api(request, parameterized.Type.fromClass(getClass.asInstanceOf[ Class[ AnyRef ] ]).as[ parameterized.ClassType ], qualified.isDefined && qualified.get)
