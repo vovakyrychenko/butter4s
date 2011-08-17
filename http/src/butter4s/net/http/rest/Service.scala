@@ -163,7 +163,7 @@ trait Service extends Logging {
 	def _api(request: Request, @Param(name = "for") name: Option[ String ], @Param(name = "qualified") qualified: Option[ java.lang.Boolean ]) = {
 		val apiFor = name.getOrElse("prototype")
 		Service.apis.get(apiFor) match {
-			case Some(api) => api(request, parameterized.Type.fromClass(getClass.asInstanceOf[ Class[ AnyRef ] ]).as[ parameterized.ClassType ], qualified.isDefined && qualified.get)
+			case Some(api) => api(request, parameterized.Type.fromClass(getClass.asInstanceOf[ Class[ AnyRef ] ]).as[ parameterized.ClassType ], qualified.isDefined && qualified.get.asInstanceOf[Boolean])
 			case _ => respond(NOT_FOUND, "unknown API " + apiFor)
 		}
 	}
