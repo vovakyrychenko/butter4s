@@ -19,7 +19,7 @@ abstract class FsNode(_path: String) extends Ordered[ FsNode ] {
 
 	lazy val path = impl.getPath
 
-	def delete: Unit
+	def delete(): Unit
 
 	override def toString = impl.toString
 
@@ -41,7 +41,9 @@ class File(_path: String) extends FsNode(_path) {
 
 	def length = impl.length
 
-	def delete = if( !impl.delete ) throw new IOException("could not delete " + path)
+	def delete() {
+		if( !impl.delete ) throw new IOException("could not delete " + path)
+	}
 
 	lazy val parent = new Directory(impl.getParent)
 }
@@ -56,14 +58,20 @@ class Directory(_path: String) extends FsNode(_path) with TraversableLike[ FsNod
 
 	def create = impl.mkdirs
 
-	def foreach[ U ](f: FsNode => U): Unit = items.foreach(f)
+	def foreach[ U ](f: FsNode => U) {
+		items.foreach(f)
+	}
 
-	def clear = this.foreach(_.delete)
+	def clear() {
+		this.foreach(_.delete())
+	}
 
-	def delete = {
-		this.foreach(_.delete)
+	def delete() {
+		this.foreach(_.delete())
 		if( !impl.delete ) throw new IOException("could not delete " + path)
 	}
 
 	protected[ this ] def newBuilder: Builder[ FsNode, List[ FsNode ] ] = new ListBuffer[ FsNode ]
+
+	def seq = this
 }

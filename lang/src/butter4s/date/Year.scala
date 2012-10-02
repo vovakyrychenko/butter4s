@@ -29,8 +29,7 @@ import java.util.Calendar._
  * @author Vladimir Kirichenko <vladimir.kirichenko@gmail.com> 
  */
 case class Year( year: Int ) extends Seq[Month] {
-	private[date] val calendar = new GregorianCalendar
-	calendar.set( YEAR, year )
+	private[date] val calendar = new GregorianCalendar(YEAR, 0, 1	)
 	private lazy val monthes = for ( m <- calendar.getActualMinimum( MONTH ) to calendar.getActualMaximum( MONTH ) ) yield Month( this, m )
 
 	def iterator = monthes.toIterator
@@ -43,7 +42,7 @@ case class Year( year: Int ) extends Seq[Month] {
 }
 
 case class Month( year: Year, number: Int ) extends Seq[Day] {
-	private[date] val calendar = year.calendar.clone.asInstanceOf[Calendar];
+	private[date] val calendar = year.calendar.clone.asInstanceOf[Calendar]
 	calendar.set( MONTH, number )
 	lazy val name:String = calendar.getDisplayName( MONTH, LONG, Locale.getDefault )
 	private lazy val days = for ( d <- calendar.getActualMinimum( DATE ) to calendar.getActualMaximum( DATE ) ) yield Day( this, d )
@@ -55,11 +54,11 @@ case class Month( year: Year, number: Int ) extends Seq[Day] {
 
 	def apply( idx: Int ) = days( idx )
 
-	override def toString = name
+	override def toString() = name
 }
 
 case class Day( month: Month, number: Int ) {
-	private[date] val calendar = month.calendar.clone.asInstanceOf[Calendar];
+	private[date] val calendar = month.calendar.clone.asInstanceOf[Calendar]
 	calendar.set( DATE, number )
 	lazy val ofWeek = calendar.get( DAY_OF_WEEK ) match {
 		case MONDAY => Monday

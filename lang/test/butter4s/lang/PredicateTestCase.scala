@@ -30,7 +30,7 @@ import org.junit.{Test, Assert}
  */
 class PredicateTestCase {
 	@Test
-	def testAndOr = {
+	def testAndOr() {
 		val p1 = (s: String) => true
 		val p2 = (s: AnyRef) => true
 

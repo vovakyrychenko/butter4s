@@ -77,12 +77,12 @@ trait JsonStorage[T <: AnyRef] {
 	}
 
 	def updateAll(ts: Seq[T]) = {
-		new Directory(location).clear
+		new Directory(location).clear()
 		for( t <- ts ) store(t)
 	}
 
 	def delete(t: T) = synchronized {
-		new File(path(t)).delete
+		new File(path(t)).delete()
 	}
 }
 

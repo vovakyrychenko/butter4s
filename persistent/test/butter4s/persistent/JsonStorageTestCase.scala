@@ -39,9 +39,11 @@ class JsonStorageTestCase {
 		val location = "/tmp/test/foo"
 	}
 
-	@Before def cleanUp = new Directory(FooStorage.location).clear
+	@Before def cleanUp() {
+		new Directory(FooStorage.location).clear()
+	}
 
-	@Test def update = {
+	@Test def update() {
 		FooStorage.store(Foo(1))
 		FooStorage.store(Foo(2))
 		assertEquals(2, FooStorage.list.size)
@@ -50,7 +52,7 @@ class JsonStorageTestCase {
 		assertEquals(newData, FooStorage.list.sorted)
 	}
 
-	@Test def isolation = {
+	@Test def isolation() {
 		val isolated = FooStorage.isolated("x")
 		isolated.store(Foo(1))
 		assertEquals(Foo(1)::Nil, isolated.list)
