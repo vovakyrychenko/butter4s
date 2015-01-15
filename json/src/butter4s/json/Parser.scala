@@ -207,7 +207,7 @@ object Parser {
 				try {
 					unquote( buf )
 				} catch {
-					case _ => fail( "unexpected string end" )
+					case _: Throwable => fail( "unexpected string end" )
 				}
 			}
 
@@ -226,7 +226,7 @@ object Parser {
 						buf.back
 					} else s.append( c )
 				}
-				val value = s.toString
+				val value = s.toString()
 				if ( doubleVal ) DoubleVal( value.toDouble ) else IntVal( BigInt( value ) )
 			}
 

@@ -69,7 +69,7 @@ class Server(port: Int, local: Boolean = true) extends Logging with Runnable {
 	}
 
 
-	def run = {
+	def run() = {
 		log.info("Ready to rock on " + serverSocket.getLocalSocketAddress)
 		while( !Thread.interrupted ) try {
 			val socket = serverSocket.accept
@@ -81,7 +81,7 @@ class Server(port: Int, local: Boolean = true) extends Logging with Runnable {
 				try httpService.handleRequest(connection, new BasicHttpContext() {
 					setAttribute(HttpContext.RESERVED_PREFIX + "base.url", "http://" + connection.getLocalAddress.getHostName + ":" + connection.getLocalPort)
 				}) catch {
-					case e => log.error(e, e)
+					case e: Throwable => log.error(e, e)
 				} finally connection.shutdown
 			}
 		} catch {

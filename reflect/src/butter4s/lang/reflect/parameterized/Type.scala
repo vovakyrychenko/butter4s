@@ -115,7 +115,7 @@ trait Type[ T ] {
 	/**
 	 *  todo deep resolving of type argument
 	 */
-	def actualTypeOf(parameter: String) = arguments(rawType.parameters.findIndexOf(_.name == parameter))
+	def actualTypeOf(parameter: String) = arguments(rawType.parameters.indexWhere(_.name == parameter))
 
 	override def hashCode = rawType.## * 41 + arguments.##
 

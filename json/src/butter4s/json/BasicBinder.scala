@@ -93,17 +93,19 @@ class BasicBinder {
 	}
 
 	private def typeHint( v: Any ) =
-		if ( v.isInstanceOf[Int] ) "int"
-		else if ( v.isInstanceOf[Long] ) "long"
-		else if ( v.isInstanceOf[Short] ) "short"
-		else if ( v.isInstanceOf[Byte] ) "byte"
-		else if ( v.isInstanceOf[Float] ) "float"
-		else if ( v.isInstanceOf[Double] ) "double"
-		else if ( v.isInstanceOf[Boolean] ) "boolean"
-		else if ( v.isInstanceOf[Char] ) "char"
-		else if ( v.isInstanceOf[Symbol] ) "symbol"
-		else if ( v.isInstanceOf[String] ) "string"
-		else v.asInstanceOf[AnyRef].typeOf.name
+		v match {
+			case _: Int => "int"
+			case _: Long => "long"
+			case _: Short => "short"
+			case _: Byte => "byte"
+			case _: Float => "float"
+			case _: Double => "double"
+			case _: Boolean => "boolean"
+			case _: Char => "char"
+			case _: Symbol => "symbol"
+			case _: String => "string"
+			case _ => v.asInstanceOf[AnyRef].typeOf.name
+		}
 
 
 	def unmarshal[A: Manifest]( input: String ): Option[A] = unmarshal( input, typeOf[A] ).asInstanceOf[Option[A]]

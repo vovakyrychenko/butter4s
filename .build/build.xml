@@ -137,7 +137,7 @@
 
 	<target name="compile" depends="antlr, resolve-local-compiler, resolve-global-compiler" if="build.use.java">
 		<javac executable="${_jdk.home}/bin/javac" debug="true" fork="yes" destdir="${project.home}/build/common/classes" encoding="UTF-8"
-		       classpathref="project.class.path" srcdir="${build.sources}"/>
+			   classpathref="project.class.path" srcdir="${build.sources}" includeantruntime="false"/>
 
 		<antcall target="copy-resources"/>
 

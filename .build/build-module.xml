@@ -156,7 +156,7 @@
 		<echo level="info" message="Building with ${_jdk.home}"/>
 		<javac executable="${_jdk.home}/bin/javac" classpathref="project.class.path"
 					 srcdir="${project.home}/${module.sources}" destdir="${project.home}/build/${module.name}"
-					 debug="true" fork="true" encoding="UTF-8" target="1.5">
+					 debug="true" fork="true" encoding="UTF-8" includeantruntime="false">
 			<compilerarg line="-Xlint:unchecked -Xlint:deprecation"/>
 		</javac>
 
